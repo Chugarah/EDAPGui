@@ -1,6 +1,0 @@
-17:02:20.394 INFO     Starting ED Autopilot V1.7.0.
-17:02:20.394 WARNING  EDAPGui.py read_config error :[Errno 2] No such file or directory: './configs/AP.json'
-17:02:20.414 WARNING  EDAPGui.py read_ship_configs error :[Errno 2] No such file or directory: './configs/ship_configs.json'
-17:02:20.416 INFO     Reading ED graphics display settings from 'C:\Users\GeorgiSundberg\AppData\Local\Frontier Developments\Elite Dangerous\Options\Graphics\DisplaySettings.xml'.
-17:02:20.424 INFO     Reading ED graphics settings from 'C:\Users\GeorgiSundberg\AppData\Local\Frontier Developments\Elite Dangerous\Options\Graphics\Settings.xml'.
-17:02:20.432 ERROR    Elite Dangerous is not set to BORDERLESS in graphics display settings.

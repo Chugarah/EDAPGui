@@ -1,10 +1,21 @@
 # Custom Dictionary Words
+Analyser
+Behaviour
+Colonisation
+Colour
+Deadzone
 directinput
+Foreward
+Galnet
 Hardpoint
+Hardpoints
+Headlook
 keybind
 keybinds
 keymod
 LOCALAPPDATA
+Neutraliser
+Numpad
 SCANCODE
 Supercruise
 Unrecognised

@@ -59,8 +59,8 @@ class EDGraphicsSettings:
 
         if not self.fullscreen_str.upper() == "Borderless".upper():
             if self.is_elite_running():
-                logger.error("Elite Dangerous is not set to BORDERLESS in graphics display settings.")
-                raise Exception('Elite Dangerous is not set to BORDERLESS in graphics display settings.')
+                logger.warning("Elite Dangerous is not set to BORDERLESS. Windowed mode support is experimental.")
+                # raise Exception('Elite Dangerous is not set to BORDERLESS in graphics display settings.')
             else:
                 logger.warning("Elite Dangerous is not set to BORDERLESS in graphics display settings, but game is not running.")
 

@@ -76,7 +76,7 @@ class EDKeys:
         ]
         self.keys = self.get_bindings()
         self.bindings = self.get_bindings_dict()
-        self.activate_window = False
+        self.activate_window = True
 
         self.missing_keys = []
         # We want to log the keyboard name instead of just the key number so we build a reverse dictionary
