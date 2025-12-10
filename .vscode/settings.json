@@ -1,0 +1,11 @@
+{
+  "cSpell.words": ["edap", "EDAP", "edmesg", "Mesg", "undock", "Undock"],
+  "cSpell.customDictionaries": {
+    "custom-dictionary-workspace": {
+      "name": "custom-dictionary-workspace",
+      "path": "${workspaceFolder:EDAPGui}/.cspell/custom-dictionary-workspace.txt",
+      "addWords": true,
+      "scope": "workspace"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# Custom Dictionary Words
+directinput
+Hardpoint
+keybind
+keybinds
+keymod
+LOCALAPPDATA
+SCANCODE
+Supercruise
+Unrecognised
