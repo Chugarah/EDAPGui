@@ -25,6 +25,9 @@ Author: sumzer0@yahoo.com
 #    bbox = win32gui.GetWindowRect(hwnd)     will also then give me the resolution of the image
 #     img = ImageGrab.grab(bbox)
 
+import ctypes
+from ctypes import wintypes
+
 elite_dangerous_window = "Elite - Dangerous (CLIENT)"
 
 
@@ -53,6 +56,8 @@ class Screen:
         self.mss = mss.mss()
         self.using_screen = True  # True to use screen, false to use an image. Set screen_image to the image
         self._screen_image = None  # Screen image captured from screen, or loaded by user for testing.
+        self.window_offset_x = 0
+        self.window_offset_y = 0
 
         # Find ED window position to determine which monitor it is on
         ed_rect = self.get_elite_window_rect()
@@ -61,31 +66,35 @@ class Screen:
             logger.error(f'Could not find window {elite_dangerous_window}.')
         else:
             logger.debug(f'Found Elite Dangerous window position: {ed_rect}')
-
-        # Examine all monitors to determine match with ED
-        self.mons = self.mss.monitors
-        mon_num = 0
-        for item in self.mons:
-            if mon_num > 0:  # ignore monitor 0 as it is the complete desktop (dims of all monitors)
-                logger.debug(f'Found monitor {mon_num} with details: {item}')
-                if ed_rect is None:
-                    self.monitor_number = mon_num
-                    self.mon = self.mss.monitors[self.monitor_number]
-                    logger.debug(f'Defaulting to monitor {mon_num}.')
-                    self.screen_width = item['width']
-                    self.screen_height = item['height']
-                    break
-                else:
-                    if item['left'] == ed_rect[0] and item['top'] == ed_rect[1]:
-                        # Get information of monitor 2
+            # If we found the window, we can set the screen size directly from the window rect
+            # This supports Windowed mode where the window might not match a monitor exactly
+            self.screen_width = ed_rect[2] - ed_rect[0]
+            self.screen_height = ed_rect[3] - ed_rect[1]
+            self.window_offset_x = ed_rect[0]
+            self.window_offset_y = ed_rect[1]
+            
+            # We still need to find which monitor contains the window for mss to work efficiently
+            # or we can just use the coordinates with mss if we handle multi-monitor offsets correctly.
+            # mss handles virtual screen coordinates.
+            
+            # Let's try to find the monitor that contains the center of the window
+            center_x = ed_rect[0] + self.screen_width // 2
+            center_y = ed_rect[1] + self.screen_height // 2
+            
+            self.monitor_number = 1 # Default to 1
+            mon_num = 0
+            for item in self.mss.monitors:
+                if mon_num > 0:
+                    if (item['left'] <= center_x < item['left'] + item['width'] and
+                        item['top'] <= center_y < item['top'] + item['height']):
                         self.monitor_number = mon_num
-                        self.mon = self.mss.monitors[self.monitor_number]
+                        self.mon = item
                         logger.debug(f'Elite Dangerous is on monitor {mon_num}.')
-                        self.screen_width = item['width']
-                        self.screen_height = item['height']
-
-            # Next monitor
-            mon_num = mon_num + 1
+                        break
+                mon_num += 1
+            else:
+                 # Fallback if not found (e.g. spanning monitors?), just use the first one or rely on offsets
+                 self.mon = self.mss.monitors[1] if len(self.mss.monitors) > 1 else self.mss.monitors[0]
 
         # Add new screen resolutions here with tested scale factors
         # this table will be default, overwritten when loading resolution.json file
@@ -141,8 +150,18 @@ class Screen:
         """
         hwnd = win32gui.FindWindow(None, elite_dangerous_window)
         if hwnd:
-            rect = win32gui.GetWindowRect(hwnd)
-            return rect
+            # Get Client Rect (width/height)
+            rect = win32gui.GetClientRect(hwnd)
+            w = rect[2] - rect[0]
+            h = rect[3] - rect[1]
+            
+            # Get Top-Left in Screen Coordinates
+            point = wintypes.POINT()
+            point.x = 0
+            point.y = 0
+            ctypes.windll.user32.ClientToScreen(hwnd, ctypes.byref(point))
+            
+            return (point.x, point.y, point.x + w, point.y + h)
         else:
             return None
 
@@ -181,9 +200,10 @@ class Screen:
         return image
 
     def get_screen(self, x_left, y_top, x_right, y_bot, rgb=True):    # if absolute need to scale??
+        # Adjust coordinates by window offset
         monitor = {
-            "top": self.mon["top"] + y_top,
-            "left": self.mon["left"] + x_left,
+            "top": self.window_offset_y + y_top,
+            "left": self.window_offset_x + x_left,
             "width": x_right - x_left,
             "height": y_bot - y_top,
             "mon": self.monitor_number,

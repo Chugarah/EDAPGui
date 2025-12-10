@@ -1,4 +1,5 @@
 from os.path import isfile
+import subprocess
 
 from EDlogger import logger
 import xmltodict
@@ -57,13 +58,25 @@ class EDGraphicsSettings:
             logger.debug(f"Elite Dangerous Display Config 'Monitor': {self.monitor}.")
 
         if not self.fullscreen_str.upper() == "Borderless".upper():
-            logger.error("Elite Dangerous is not set to BORDERLESS in graphics display settings.")
-            raise Exception('Elite Dangerous is not set to BORDERLESS in graphics display settings.')
+            if self.is_elite_running():
+                logger.warning("Elite Dangerous is not set to BORDERLESS. Windowed mode support is experimental.")
+                # raise Exception('Elite Dangerous is not set to BORDERLESS in graphics display settings.')
+            else:
+                logger.warning("Elite Dangerous is not set to BORDERLESS in graphics display settings, but game is not running.")
 
         # Process graphics settings
         if self.settings is not None:
             self.fov = self.settings['GraphicsOptions']['FOV']
             logger.debug(f"Elite Dangerous Graphics Options 'FOV': {self.fov}.")
+
+    def is_elite_running(self):
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        try:
+            output = subprocess.check_output('tasklist /FI "IMAGENAME eq EliteDangerous64.exe"', startupinfo=startupinfo).decode()
+            return "EliteDangerous64.exe" in output
+        except:
+            return False
 
     @staticmethod
     def read_settings(filename) -> dict:
