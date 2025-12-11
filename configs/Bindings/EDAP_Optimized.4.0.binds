@@ -189,7 +189,7 @@
 	</SetSpeed75>
 	<SetSpeed100>
 		<Primary Device="{NoDevice}" Key="" />
-		<Secondary Device="Keyboard" Key="Key_Numpad_1" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_Enter" />
 	</SetSpeed100>
 	<YawAxis_Landing>
 		<Binding Device="{NoDevice}" Key="" />
@@ -281,11 +281,11 @@
 	</UseBoostJuice>
 	<HyperSuperCombination>
 		<Primary Device="Keyboard" Key="Key_J" />
-		<Secondary Device="Keyboard" Key="Key_Numpad_Enter"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_Divide"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
 	</HyperSuperCombination>
 	<Supercruise>
 		<Primary Device="Keyboard" Key="Key_C" />
-		<Secondary Device="Keyboard" Key="Key_Numpad_Divide"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_Multiply"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
 	</Supercruise>
 	<Hyperspace>
 		<Primary Device="{NoDevice}" Key="" />
@@ -358,11 +358,11 @@
 	</TargetNextRouteSystem>
 	<PrimaryFire>
 		<Primary Device="Mouse" Key="Mouse_1" />
-		<Secondary Device="Keyboard" Key="Key_Numpad_1"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_F1"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
 	</PrimaryFire>
 	<SecondaryFire>
 		<Primary Device="Mouse" Key="Mouse_2" />
-		<Secondary Device="Keyboard" Key="Key_Numpad_2"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_F2"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
 	</SecondaryFire>
 	<CycleFireGroupNext>
 		<Primary Device="Keyboard" Key="Key_N" />
@@ -374,7 +374,7 @@
 	</CycleFireGroupPrevious>
 	<DeployHardpointToggle>
 		<Primary Device="Keyboard" Key="Key_U" />
-		<Secondary Device="Keyboard" Key="Key_Numpad_Multiply"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_Add"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
 	</DeployHardpointToggle>
 	<DeployHardpointsOnFire Value="1" />
 	<ToggleButtonUpInput>
@@ -384,7 +384,7 @@
 	</ToggleButtonUpInput>
 	<DeployHeatSink>
 		<Primary Device="Keyboard" Key="Key_V" />
-		<Secondary Device="Keyboard" Key="Key_Numpad_Add"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_1"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
 	</DeployHeatSink>
 	<ShipSpotLightToggle>
 		<Primary Device="{NoDevice}" Key="" />
@@ -1020,7 +1020,7 @@
 		<Secondary Device="{NoDevice}" Key="" />
 	</MultiCrewCockpitUICycleBackward>
 	<OrderRequestDock>
-		<Primary Device="Keyboard" Key="Key_Numpad_0" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</OrderRequestDock>
 	<OrderDefensiveBehaviour>
@@ -1028,23 +1028,23 @@
 		<Secondary Device="{NoDevice}" Key="" />
 	</OrderDefensiveBehaviour>
 	<OrderAggressiveBehaviour>
-		<Primary Device="Keyboard" Key="Key_Numpad_2" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</OrderAggressiveBehaviour>
 	<OrderFocusTarget>
-		<Primary Device="Keyboard" Key="Key_Numpad_3" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</OrderFocusTarget>
 	<OrderHoldFire>
-		<Primary Device="Keyboard" Key="Key_Numpad_4" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</OrderHoldFire>
 	<OrderHoldPosition>
-		<Primary Device="Keyboard" Key="Key_Numpad_5" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</OrderHoldPosition>
 	<OrderFollow>
-		<Primary Device="Keyboard" Key="Key_Numpad_6" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</OrderFollow>
 	<OpenOrders>
@@ -1081,7 +1081,7 @@
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraScrollRight>
 	<ToggleFreeCam>
-		<Primary Device="Keyboard" Key="Key_Numpad_0" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</ToggleFreeCam>
 	<VanityCameraOne>
@@ -1089,35 +1089,35 @@
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraOne>
 	<VanityCameraTwo>
-		<Primary Device="Keyboard" Key="Key_Numpad_2" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraTwo>
 	<VanityCameraThree>
-		<Primary Device="Keyboard" Key="Key_Numpad_3" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraThree>
 	<VanityCameraFour>
-		<Primary Device="Keyboard" Key="Key_Numpad_4" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraFour>
 	<VanityCameraFive>
-		<Primary Device="Keyboard" Key="Key_Numpad_5" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraFive>
 	<VanityCameraSix>
-		<Primary Device="Keyboard" Key="Key_Numpad_6" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraSix>
 	<VanityCameraSeven>
-		<Primary Device="Keyboard" Key="Key_Numpad_7" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraSeven>
 	<VanityCameraEight>
-		<Primary Device="Keyboard" Key="Key_Numpad_8" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraEight>
 	<VanityCameraNine>
-		<Primary Device="Keyboard" Key="Key_Numpad_9" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</VanityCameraNine>
 	<VanityCameraTen>
@@ -1240,7 +1240,7 @@
 		<Secondary Device="{NoDevice}" Key="" />
 	</ToggleRotationLock>
 	<FixCameraRelativeToggle>
-		<Primary Device="Keyboard" Key="Key_Numpad_0" />
+		<Primary Device="{NoDevice}" Key="" />
 		<Secondary Device="{NoDevice}" Key="" />
 	</FixCameraRelativeToggle>
 	<FixCameraWorldToggle>

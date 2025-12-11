@@ -114,6 +114,7 @@ class APGui():
 
         self.gui_loaded = False
         self.log_buffer = queue.Queue()
+        self.callback_queue = queue.Queue()  # Thread-safe queue for callbacks from background threads
         self.callback('log', f'Starting ED Autopilot {EDAP_VERSION}.')
 
         self.ed_ap = EDAutopilot(cb=self.callback)
@@ -218,11 +219,28 @@ class APGui():
 
         self.ed_ap.gui_loaded = True
         self.gui_loaded = True
+        # Start polling the callback queue
+        self.check_callback_queue()
         # Send a log entry which will flush out the buffer.
         self.callback('log', 'ED Autopilot loaded successfully.')
 
     # callback from the EDAP, to configure GUI items
+    # Thread-safe: puts messages into a queue that the main thread polls
     def callback(self, msg, body=None):
+        self.callback_queue.put((msg, body))
+
+    def check_callback_queue(self):
+        """Polls the callback queue and processes messages on the main thread."""
+        try:
+            while True:
+                msg, body = self.callback_queue.get_nowait()
+                self._handle_callback(msg, body)
+        except queue.Empty:
+            pass
+        # Schedule the next poll
+        self.root.after(100, self.check_callback_queue)
+
+    def _handle_callback(self, msg, body):
         if msg == 'log':
             self.log_msg(body)
         elif msg == 'log+vce':

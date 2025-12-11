@@ -211,7 +211,85 @@ The following keybindings are required by AP, so make sure a key is assigned to 
 |                       |                          |                                              |
 | ExplorationFSSQuit    | LEAVE FSS                | SHIP CONTROLS > FULL SPECTRUM SYSTEM SCANNER |
 
+## Automatic Keybinding Generator
 
+EDAPGui includes a keybinding generator script (`generate_bindings.py`) that creates an optimized binding preset for use with the autopilot. This eliminates the need to manually configure each keybinding.
+
+### Quick Setup
+
+1. **Generate the bindings file:**
+   ```sh
+   > cd EDAPGui
+   > python generate_bindings.py
+   ```
+
+2. **Copy the generated file to Elite Dangerous:**
+   ```
+   Source: EDAPGui/configs/Bindings/EDAP_Optimized.4.0.binds
+   Destination: %LOCALAPPDATA%\Frontier Developments\Elite Dangerous\Options\Bindings\
+   ```
+
+3. **Set the active preset** by editing `StartPreset.4.start` in the same folder:
+   ```
+   EDAP_Optimized
+   EDAP_Optimized
+   EDAP_Optimized
+   EDAP_Optimized
+   ```
+   Or select "EDAP_Optimized" from the preset dropdown in Elite Dangerous Options > Controls.
+
+4. **Restart Elite Dangerous** (or reload bindings).
+
+### EDAP_Optimized Key Assignments
+
+The generated preset uses the **Numpad** for EDAP controls, keeping your normal WASD flight keys untouched.
+
+| Function | Key | Notes |
+|----------|-----|-------|
+| **Flight Controls (No Modifier)** |||
+| Throttle 0% | `Numpad 0` | |
+| Throttle 50% | `Numpad 5` | |
+| Throttle 75% | `Numpad 3` | |
+| Throttle 100% | `Numpad Enter` | |
+| Yaw Left/Right | `Numpad 4/6` | |
+| Pitch Up/Down | `Numpad 2/8` | |
+| Roll Left/Right | `Numpad 7/9` | |
+| **UI Navigation (Alt + Numpad)** |||
+| UI Up/Down | `Alt + Numpad 8/2` | |
+| UI Left/Right | `Alt + Numpad 4/6` | |
+| UI Select | `Alt + Numpad Enter` | |
+| UI Back | `Alt + Numpad .` | |
+| Next/Prev Panel | `Alt + Numpad 9/7` | |
+| **Actions (Ctrl + Numpad)** |||
+| FSD Jump | `Ctrl + Numpad /` | |
+| Supercruise | `Ctrl + Numpad *` | |
+| Deploy Hardpoints | `Ctrl + Numpad +` | |
+| Landing Gear | `Ctrl + Numpad -` | |
+| Deploy Heatsink | `Ctrl + Numpad 1` | |
+| Select Target | `Ctrl + Numpad .` | |
+| Target Next Route | `Ctrl + Numpad 0` | |
+
+### How the Generator Works
+
+The script reads your existing `Custom.4.2.binds` file as a template and:
+
+1. **Clears EDAP hotkey conflicts** - Removes any bindings using `Home`, `End`, `Insert`, or `Page Up` (reserved for EDAP hotkeys).
+2. **Resolves duplicate bindings** - Before assigning a key, it scans all other commands and clears any that use the same key+modifier combination.
+3. **Sets Secondary bindings** - Adds EDAP bindings to the Secondary slot, preserving your Primary bindings.
+
+### Customizing the Generator
+
+Edit `generate_bindings.py` to modify the `BINDINGS_OPTIMIZED` dictionary:
+
+```python
+BINDINGS_OPTIMIZED = {
+    "SetSpeed100": bind("Key_Numpad_Enter"),           # No modifier
+    "HyperSuperCombination": bind("Key_Numpad_Divide", "Key_LeftControl"),  # Ctrl+key
+    # ... add or modify bindings as needed
+}
+```
+
+Run the script again after making changes.
 
 # Autopilot Options:
 * FSD Route Assist: will execute your route.  At each jump the sequence will perform some fuel scooping, however, if 

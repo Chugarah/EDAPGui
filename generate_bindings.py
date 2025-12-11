@@ -21,7 +21,7 @@ BINDINGS_OPTIMIZED = {
     # --- Flight Controls (Numpad Direct) ---
     "SetSpeedZero": bind("Key_Numpad_0"),
     "SetSpeed50": bind("Key_Numpad_5"),
-    "SetSpeed100": bind("Key_Numpad_1"),
+    "SetSpeed100": bind("Key_Numpad_Enter"),  # Changed from Numpad_1 for reliability
     "SetSpeed75": bind("Key_Numpad_3"),
     
     "YawLeftButton": bind("Key_Numpad_4"),
@@ -33,19 +33,19 @@ BINDINGS_OPTIMIZED = {
 
     # --- Actions (Ctrl + Numpad) ---
     "SelectTarget": bind("Key_Numpad_Decimal", "Key_LeftControl"),
-    "HyperSuperCombination": bind("Key_Numpad_Enter", "Key_LeftControl"),
-    "Supercruise": bind("Key_Numpad_Divide", "Key_LeftControl"),
-    "DeployHardpointToggle": bind("Key_Numpad_Multiply", "Key_LeftControl"),
+    "HyperSuperCombination": bind("Key_Numpad_Divide", "Key_LeftControl"),  # Changed from Numpad_Enter
+    "Supercruise": bind("Key_Numpad_Multiply", "Key_LeftControl"),  # Changed from Numpad_Divide
+    "DeployHardpointToggle": bind("Key_Numpad_Add", "Key_LeftControl"),  # Changed from Numpad_Multiply
     "LandingGearToggle": bind("Key_Numpad_Subtract", "Key_LeftControl"),
-    "DeployHeatSink": bind("Key_Numpad_Add", "Key_LeftControl"),
+    "DeployHeatSink": bind("Key_Numpad_1", "Key_LeftControl"),  # Changed from Numpad_Add, now uses freed Numpad_1
 
     # --- Missing Keys (Mapped to avoid warnings) ---
     "GalaxyMapOpen": bind("Key_M", "Key_LeftControl"),
     "SystemMapOpen": bind("Key_Comma", "Key_LeftControl"),
     "TargetNextRouteSystem": bind("Key_Numpad_0", "Key_LeftControl"),
     "HeadLookReset": bind("Key_Numpad_5", "Key_LeftControl"),
-    "PrimaryFire": bind("Key_Numpad_1", "Key_LeftControl"),
-    "SecondaryFire": bind("Key_Numpad_2", "Key_LeftControl"),
+    "PrimaryFire": bind("Key_F1", "Key_LeftControl"),  # Changed from Numpad_1 to avoid conflict
+    "SecondaryFire": bind("Key_F2", "Key_LeftControl"),  # Changed from Numpad_2 to avoid conflict
     "MouseReset": bind("Key_Numpad_3", "Key_LeftControl"),
     
     # --- Fix FSS Conflict ---
@@ -83,6 +83,35 @@ def clear_conflicting_keys(root):
                     cleared_count += 1
     print(f"Cleared {cleared_count} conflicting bindings.")
 
+
+def resolve_conflicts(root, target_key, target_modifier, skip_command):
+    """
+    Scans all bindings in the XML root. If any command (other than skip_command)
+    uses the same key+modifier combination, that binding is cleared to prevent duplicates.
+    """
+    cleared_count = 0
+    for command in root:
+        if command.tag == skip_command:
+            continue
+        for device_slot in ["Primary", "Secondary"]:
+            slot = command.find(device_slot)
+            if slot is not None and slot.get("Device") == "Keyboard":
+                key = slot.get("Key")
+                if key == target_key:
+                    # Check modifier match
+                    mod_elem = slot.find("Modifier")
+                    existing_mod = mod_elem.get("Key") if mod_elem is not None else None
+                    
+                    if existing_mod == target_modifier:
+                        print(f"  Conflict resolved: {command.tag} [{device_slot}] also uses {target_key} + {target_modifier or 'None'}. Clearing...")
+                        slot.set("Device", "{NoDevice}")
+                        slot.set("Key", "")
+                        if mod_elem is not None:
+                            slot.remove(mod_elem)
+                        cleared_count += 1
+    return cleared_count
+
+
 def generate_binding_file(preset_name, bindings_map, output_filename):
     if not os.path.exists(SOURCE_FILE):
         print(f"Error: Source file {SOURCE_FILE} not found.")
@@ -96,10 +125,11 @@ def generate_binding_file(preset_name, bindings_map, output_filename):
     root.set("MajorVersion", "4")
     root.set("MinorVersion", "0")
 
-    # Step 1: Clear conflicts
+    # Step 1: Clear EDAP hotkey conflicts
     clear_conflicting_keys(root)
 
     print(f"Generating {preset_name}...")
+    total_conflicts_resolved = 0
 
     for command, binding_def in bindings_map.items():
         # Handle simple string format from old maps if necessary (backward compatibility)
@@ -108,6 +138,9 @@ def generate_binding_file(preset_name, bindings_map, output_filename):
             
         key = binding_def["Key"]
         modifier = binding_def["Modifier"]
+
+        # Step 2: Resolve conflicts for this specific key+modifier before assigning
+        total_conflicts_resolved += resolve_conflicts(root, key, modifier, command)
 
         # Find the command element
         element = root.find(command)
@@ -137,18 +170,24 @@ def generate_binding_file(preset_name, bindings_map, output_filename):
         else:
             print(f"  Set {command} Secondary to {key}")
 
+    print(f"\nTotal duplicate bindings resolved: {total_conflicts_resolved}")
     output_path = os.path.join(OUTPUT_DIR, output_filename)
     tree.write(output_path, encoding="UTF-8", xml_declaration=True)
     print(f"Saved to {output_path}")
 
+
 def main():
     print("Generating EDAPGui Binding Templates...")
+    print("=" * 50)
     
     # Generate Optimized Version
     generate_binding_file("EDAP_Optimized", BINDINGS_OPTIMIZED, "EDAP_Optimized.4.0.binds")
 
-    print("\nDone. Copy the generated .binds files to your Elite Dangerous bindings folder:")
+    print("\n" + "=" * 50)
+    print("Done. Copy the generated .binds files to your Elite Dangerous bindings folder:")
     print("%LOCALAPPDATA%\\Frontier Developments\\Elite Dangerous\\Options\\Bindings")
+    print("\nThen select 'EDAP_Optimized' from the preset dropdown in-game.")
+
 
 if __name__ == "__main__":
     main()
