@@ -964,7 +964,7 @@ class EDAutopilot:
         
         # Sticky window: If we saw the target recently, still return False
         # This prevents flickering around the threshold from triggering avoidance
-        sticky_window_seconds = 1.0
+        sticky_window_seconds = self.config.get('OcclusionStickySeconds', 3.0)
         time_since_visible = time_module.time() - self._last_target_visible_time
         if time_since_visible < sticky_window_seconds:
             logger.debug(f"Occlusion VETO: Sticky window active ({time_since_visible:.2f}s < {sticky_window_seconds}s), returning NOT occluded")
@@ -990,14 +990,14 @@ class EDAutopilot:
             # Template matching failed - try shape-based detection
             circle_found, circle_score, circle_result, circle_debug = scr_reg.detect_dashed_circle(
                 'target_occluded',
-                ring_score_thresh=0.40,
+                ring_score_thresh=0.55,
                 min_gap_gain=0.1
             )
             circle_info = circle_debug
             if circle_found:
                 logger.debug(f"Dashed circle detected via shape analysis (score={circle_score:.3f}, "
                         f"cov={circle_info.get('coverage', 0):.2f}, runs={circle_info.get('runs', 0)}, "
-                        f"gap={circle_info.get('gap_gain', 0):.2f})")
+                        f"gap={circle_info.get('gap_gain', 0):.2f}, off={circle_info.get('longest_off', 0)})")
 
         if self.cv_view:
             dst_image_d = cv2.cvtColor(dst_image, cv2.COLOR_GRAY2RGB)
@@ -1394,7 +1394,11 @@ class EDAutopilot:
             True if sun avoidance was executed, False if skipped.
         """
         # Gate: only run SunAvoidance during inter-system route travel
-        if not self.is_inter_system_route_active():
+        # Also run if we are in a waypoint sequence or FSD assist, as we might have just arrived at the star
+        if not (self.is_inter_system_route_active() or 
+                self.waypoint_assist_enabled or 
+                self.single_waypoint_enabled or 
+                self.fsd_assist_enabled):
             logger.debug('sun_avoid: skipping - no inter-system route active (in-system SC Assist)')
             return False
         
@@ -2224,7 +2228,16 @@ class EDAutopilot:
             return True
         # else there is a destination in System, so let jump over to SC Assist
         else:
-            self.keys.send('SetSpeed100')
+            # Ensure we don't fly into the sun upon arrival
+            self.sun_avoid(scr_reg)
+
+            # Wait for Journal to update to in_supercruise to prevent sc_assist from re-engaging
+            # We give it up to 10 seconds, but usually it's faster.
+            start_wait = time.time()
+            while self.jn.ship_state()['status'] != 'in_supercruise' and (time.time() - start_wait) < 10:
+                sleep(0.5)
+
+            self.keys.send('SetSpeed50')
             self.vce.say("System Reached, preparing for supercruise")
             sleep(1)
             return False

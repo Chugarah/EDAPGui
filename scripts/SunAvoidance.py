@@ -138,6 +138,9 @@ class SunAvoidance:
         logger.info('SunAvoidance: Avoidance maneuver complete, resuming navigation')
         self.ap.ap_ckb('log+vce', 'Sun avoidance complete')
 
+        # Reduce speed to 50% before re-aligning to avoid overshooting
+        self.ap.keys.send('SetSpeed50')
+
         return True
 
     def _is_sun_blocking_path(self, scr_reg) -> bool:

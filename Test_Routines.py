@@ -1,11 +1,20 @@
 import cv2
 import os
 import sys
+import time
 import numpy as np
 
-# Import production classes (assuming strict file structure)
+# Import production classes
 import Screen_Regions
 import Image_Templates
+import Screen
+
+class DummyCallback:
+    """ Mock callback for Screen class logging """
+    def __call__(self, event, msg):
+        # Only print errors or interesting events to avoid spam
+        if "ERROR" in msg:
+            print(f"[Screen] {msg}")
 
 class StaticScreen:
     """ Mimics Screen.py but operates on a static image frame """
@@ -37,7 +46,7 @@ class StaticScreen:
         return region # Return BGR by default (matches Screen.get_screen_region(rgb=False))
 
 
-def test_occlusion_logic(scr_reg, frame, path):
+def test_occlusion_logic(scr_reg, frame, path="Live Capture"):
     """
     Simulate the is_destination_occluded logic from ED_AP.py and print diagnostics.
     
@@ -125,31 +134,234 @@ def test_occlusion_logic(scr_reg, frame, path):
         return None, 0.0, 0.0, 0.0
 
 
-def main():
-    # Collect test images
-    image_paths = []
-    
-    if len(sys.argv) > 1:
-        image_paths = sys.argv[1:]
-    else:
-        # Default: scan both test/target-occluded and test/target directories
-        test_dirs = [
-            os.path.join(os.getcwd(), 'test', 'target-occluded'),
-            os.path.join(os.getcwd(), 'test', 'target'),
-        ]
-        
-        for test_dir in test_dirs:
-            if os.path.exists(test_dir):
-                print(f"Scanning: {test_dir}")
-                for f in os.listdir(test_dir):
-                    if f.lower().endswith(('.png', '.bmp', '.jpg')):
-                        image_paths.append(os.path.join(test_dir, f))
-        
-        if not image_paths:
-            print("No images found in test directories.")
-            print("Usage: python Test_Routines.py [image1.png] [image2.png] ...")
-            return
+# Mock classes for OCR dependency
+class MockOCR:
+    def __init__(self):
+        pass
+    def image_simple_ocr(self, image):
+        # This is a stub. In a real test we'd need to properly mock or use the real OCR.
+        # For now, we return a dummy string if the image looks like it might have text,
+        # or we could instantiate the real OCR if available.
+        try:
+           import OCR
+           # We need a screen object for OCR init, but it just stores it.
+           # Let's try to verify if we can check 'sc_disengage_active' logic logic
+           return None
+        except:
+           return None
+           
+    def string_similarity(self, s1, s2):
+        return 0.0
 
+class MockStatus:
+    def get_flag2(self, flag): return False
+    def get_flag(self, flag): return False
+
+class MockAP:
+    def __init__(self, screen):
+        self.scr = screen
+        self.config = {'SupercruiseAvoidanceCooldownSeconds': 5.0}
+        self.locale = {"PRESS_TO_DISENGAGE_MSG": "PRESS [J] TO DISENGAGE"}
+        try:
+            import OCR
+            self.ocr = OCR.OCR(screen)
+        except Exception as e:
+            print(f"[WARN] OCR init failed in test: {e}")
+            self.ocr = MockOCR()
+            
+        self.debug_overlay = False
+        self.cv_view = False
+
+    def sc_disengage_active(self, scr_reg) -> bool:
+        """ Copied logic from ED_AP.py sc_disengage_active for testing """
+        # logic from ED_AP.py
+        rect = scr_reg.reg['disengage']['rect']
+        image = self.scr.get_screen_region(rect)
+        # Fix color space issue mentioned in source
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        
+        mask = scr_reg.capture_region_filtered(self.scr, 'disengage')
+        masked_image = cv2.bitwise_and(image, image, mask=mask)
+        
+        # We process 'masked_image' for OCR
+        # OCR the selected item
+        sim_match = 0.35  # Similarity match 0.0 - 1.0
+        sim = 0.0
+        
+        ocr_textlist = self.ocr.image_simple_ocr(masked_image)
+        if ocr_textlist is not None:
+            # We compare against the list string representation as done in ED_AP.py
+            # "sim = self.ocr.string_similarity(self.locale[\"PRESS_TO_DISENGAGE_MSG\"], str(ocr_textlist))"
+            sim = self.ocr.string_similarity(self.locale["PRESS_TO_DISENGAGE_MSG"], str(ocr_textlist))
+            # print(f"    [OCR] Text: {ocr_textlist}, Sim: {sim:.3f}")
+
+        return sim > sim_match, sim, ocr_textlist
+
+
+def test_disengage_logic(scr_reg, frame, path="Live Capture"):
+    """
+    Test the 'Press [J] to Disengage' detection.
+    Checks:
+    1. Template Match (sc_disengage_label_up)
+    2. OCR Match (sc_disengage_active) - The "Primary" check in modern ED_AP
+    """
+    print(f"\n{'='*60}")
+    print(f"Testing Disengage: {os.path.basename(path)}")
+    print(f"{'='*60}")
+
+    try:
+        # 1. Template Match (Legacy/Trigger)
+        detected_template = False
+        disengage_val = 0.0
+        
+        # Handle small images (crops) logic for template match
+        if frame.shape[1] < 1000:
+            # print("    [INFO] Small image detected - treating as pre-cropped region.")
+            # Manual filter match
+            filtered = scr_reg.filter_by_color(frame, scr_reg.blue_sco_color_range)
+            templ_img = scr_reg.templates.template['disengage']['image']
+            
+            if filtered.shape[0] >= templ_img.shape[0] and filtered.shape[1] >= templ_img.shape[1]:
+                match = cv2.matchTemplate(filtered, templ_img, cv2.TM_CCOEFF_NORMED)
+                (_, disengage_val, _, _) = cv2.minMaxLoc(match)
+        else:
+            # Standard region
+            _, (_, disengage_val, _, _), _ = scr_reg.match_template_in_region('disengage', 'disengage')
+        
+        thresh = scr_reg.disengage_thresh
+        detected_template = disengage_val >= thresh
+        
+        print(f"    [Template] Match Score: {disengage_val:.4f} (thresh: {thresh:.2f}) -> {'YES' if detected_template else 'NO'}")
+
+        # 2. OCR Match (Active Check)
+        # We need an instance of a MockAP to run the logic or copy it here.
+        # Since we initialized MockAP with the screen, we can use it.
+        # Note: OCR requires the full screen object to grab regions if not provided directly,
+        # but our MockAP uses self.scr.get_screen_region(rect).
+        
+        # If frame is small, we can't easily run the standard region logic without mocking get_screen_region
+        # but for Live/Full screenshots it works.
+        
+        detected_ocr = False
+        sim = 0.0
+        text = ""
+        
+        if frame.shape[1] >= 1000:
+            mock_ap = MockAP(scr_reg.screen)
+            detected_ocr, sim, text = mock_ap.sc_disengage_active(scr_reg)
+            print(f"    [OCR]      Similarity:  {sim:.4f} (thresh: 0.35) -> {'YES' if detected_ocr else 'NO'}")
+            print(f"    [OCR]      Found Text:  {text}")
+        else:
+            print("    [OCR]      Skipped (Image too small/cropped for full coordinate lookup)")
+
+        return (detected_template or detected_ocr), disengage_val
+        
+    except Exception as e:
+        print(f"    [ERROR] Disengage check failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return None, 0.0
+
+
+def run_live_test(test_mode='occlusion'):
+    """ Run the specified test in a live loop using screen capture. """
+    print("Initializing Live Screen Capture...")
+    print("Press 'q' to quit.")
+    
+    cb = DummyCallback()
+    try:
+        screen = Screen.Screen(cb)
+    except Exception as e:
+        print(f"Failed to initialize Screen: {e}")
+        return
+
+    templ = Image_Templates.Image_Templates(screen.scaleX, screen.scaleY, screen.scaleX)
+    scr_reg = Screen_Regions.Screen_Regions(screen, templ)
+    
+    while True:
+        start_time = time.time()
+        
+        # 1. Capture full screen (for visualization context)
+        frame = screen.get_screen_full()
+        if frame is None:
+            print("Failed to capture screen.")
+            time.sleep(1)
+            continue
+            
+        disp_frame = frame.copy() # Copy for drawing
+            
+        # 2. Run Logic & Visualization
+        
+        # --- OCCLUSION TEST ---
+        if test_mode in ['occlusion', 'all']:
+            final_occluded, target_val, occ_val, circle_score = test_occlusion_logic(scr_reg, frame, "Live Stream")
+            
+            # Draw ROI and Status
+            roi_rect = scr_reg.reg['target_occluded']['rect'] # [x1, y1, x2, y2]
+            color = (0, 0, 255) if final_occluded else (0, 255, 0)
+            cv2.rectangle(disp_frame, (roi_rect[0], roi_rect[1]), (roi_rect[2], roi_rect[3]), color, 2)
+            
+            label = "OCCLUDED" if final_occluded else "CLEAR"
+            text = f"{label} (T:{target_val:.2f} O:{occ_val:.2f} C:{circle_score:.2f})"
+            cv2.putText(disp_frame, text, (roi_rect[0], roi_rect[1] - 10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+
+        # --- DISENGAGE TEST ---
+        if test_mode in ['disengage', 'all']:
+            detected, val = test_disengage_logic(scr_reg, frame, "Live Stream")
+            
+            # Draw ROI and Status
+            roi_rect = scr_reg.reg['disengage']['rect']
+            color = (0, 255, 0) if detected else (0, 0, 255) # Green if found
+            cv2.rectangle(disp_frame, (roi_rect[0], roi_rect[1]), (roi_rect[2], roi_rect[3]), color, 2)
+            
+            label = "DISENGAGE" if detected else "NO MATCH"
+            text = f"{label} ({val:.2f})"
+            # Draw text slightly below or above depending on region position to avoid overlap if running 'all'
+            # Disengage is usually lower screen, Occclusion is center.
+            cv2.putText(disp_frame, text, (roi_rect[0], roi_rect[1] - 10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+
+        
+        # Resize for display if 4k
+        final_display = disp_frame
+        if disp_frame.shape[1] > 1920:
+            scale = 1920 / disp_frame.shape[1]
+            final_display = cv2.resize(disp_frame, None, fx=scale, fy=scale)
+            
+        cv2.imshow("Live Test Debug", final_display)
+        
+        # FPS control
+        dt = time.time() - start_time
+        wait_ms = max(1, int(100 - (dt * 1000))) # Cap at ~10 FPS
+        
+        key = cv2.waitKey(wait_ms) & 0xFF
+        if key == ord('q'):
+            break
+            
+    cv2.destroyAllWindows()
+
+
+def main():
+    # Parse arguments
+    import argparse
+    parser = argparse.ArgumentParser(description="Test EDAP Logic")
+    parser.add_argument('images', metavar='IMG', type=str, nargs='*', 
+                        help='Image files to test (offline mode)')
+    parser.add_argument('--live', action='store_true', 
+                        help='Force live capture mode (default if no images provided)')
+    parser.add_argument('--test', choices=['occlusion', 'disengage', 'all'], default='occlusion',
+                        help='Which test suite to run')
+    
+    args = parser.parse_args()
+    
+    # Decide mode
+    if args.live or not args.images:
+        run_live_test(args.test)
+        return
+
+    # Offline Mode
+    image_paths = args.images
     print(f"\nFound {len(image_paths)} test image(s)\n")
 
     results = []
@@ -169,43 +381,57 @@ def main():
         templ = Image_Templates.Image_Templates(static_screen.scaleX, static_screen.scaleY, static_screen.scaleX)
         scr_reg = Screen_Regions.Screen_Regions(static_screen, templ)
         
-        # Run the occlusion test
-        final_occluded, target_val, occ_val, circle_score = test_occlusion_logic(scr_reg, frame, path)
+        disp_frame = frame.copy()
         
-        results.append({
-            'path': path,
-            'occluded': final_occluded,
-            'target_val': target_val,
-            'occ_val': occ_val,
-            'circle_score': circle_score
-        })
-        
-        # Debug image (only if test succeeded)
-        if final_occluded is not None:
-            dbg = frame.copy()
+        # --- OCCLUSION TEST ---
+        if args.test in ['occlusion', 'all']:
+            final_occluded, target_val, occ_val, circle_score = test_occlusion_logic(scr_reg, frame, path)
+            
+            # Visualize
             roi_rect = scr_reg.reg['target_occluded']['rect']
             color = (0, 0, 255) if final_occluded else (0, 255, 0)
-            cv2.rectangle(dbg, (roi_rect[0], roi_rect[1]), (roi_rect[2], roi_rect[3]), color, 2)
+            cv2.rectangle(disp_frame, (roi_rect[0], roi_rect[1]), (roi_rect[2], roi_rect[3]), color, 2)
             label = "OCCLUDED" if final_occluded else "CLEAR"
-            cv2.putText(dbg, label, (roi_rect[0], roi_rect[1] - 10), 
+            cv2.putText(disp_frame, label, (roi_rect[0], roi_rect[1] - 10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
             
-            out_name = f"test_result_{os.path.basename(path)}"
-            cv2.imwrite(out_name, dbg)
+            results.append({
+                'path': path,
+                'test': 'occlusion',
+                'result': final_occluded,
+                'details': f"target={target_val:.2f} occ={occ_val:.2f} circle={circle_score:.2f}"
+            })
+
+        # --- DISENGAGE TEST ---
+        if args.test in ['disengage', 'all']:
+            detected, val = test_disengage_logic(scr_reg, frame, path)
+            
+             # Visualize
+            roi_rect = scr_reg.reg['disengage']['rect']
+            color = (0, 255, 0) if detected else (0, 0, 255)
+            cv2.rectangle(disp_frame, (roi_rect[0], roi_rect[1]), (roi_rect[2], roi_rect[3]), color, 2)
+            label = "DISENGAGE" if detected else "NO MATCH"
+            cv2.putText(disp_frame, label, (roi_rect[0], roi_rect[1] - 10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+            
+            results.append({
+                'path': path,
+                'test': 'disengage',
+                'result': detected,
+                'details': f"score={val:.2f}"
+            })
+
+        # Save result image
+        out_name = f"test_result_{os.path.basename(path)}"
+        cv2.imwrite(out_name, disp_frame)
 
     # Summary
     print(f"\n{'='*60}")
     print("SUMMARY")
     print(f"{'='*60}")
     for r in results:
-        if r['occluded'] is None:
-            status = "[ERROR]   "
-        elif r['occluded']:
-            status = "[OCCLUDED]"
-        else:
-            status = "[CLEAR]   "
-        print(f"  {status} {os.path.basename(r['path']):<40} "
-              f"target={r['target_val']:.3f} occ={r['occ_val']:.3f} circle={r['circle_score']:.3f}")
+        res_str = str(r['result'])
+        print(f"  [{r['test'].upper()}] {os.path.basename(r['path']):<30} {res_str:<10} {r['details']}")
 
 
 if __name__ == "__main__":

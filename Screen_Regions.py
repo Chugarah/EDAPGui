@@ -93,7 +93,7 @@ class Screen_Regions:
         # Define the thresholds for template matching to be consistent throughout the program
         self.compass_match_thresh = 0.35
         self.navpoint_match_thresh = 0.8
-        self.target_thresh = 0.54
+        self.target_thresh = 0.45
         self.target_occluded_thresh = 0.55
         self.sun_threshold = 125
         self.disengage_thresh = 0.25
@@ -103,7 +103,7 @@ class Screen_Regions:
         self.orange_2_color_range = [array([16, 165, 220]), array([98, 255, 255])]
         self.target_occluded_range= [array([16, 31, 85]),   array([26, 160, 212])]
         self.blue_color_range     = [array([0, 28, 170]), array([180, 100, 255])]
-        self.blue_sco_color_range = [array([10, 0, 0]), array([100, 150, 255])]
+        self.blue_sco_color_range = [array([80, 0, 50]), array([130, 255, 255])]
         self.fss_color_range      = [array([95, 210, 70]),  array([105, 255, 120])]
 
         self.reg = {}
@@ -111,7 +111,7 @@ class Screen_Regions:
         # The rect is [L, T, R, B] top left x, y, and bottom right x, y in fraction of screen resolution
         self.reg['compass']   = {'rect': [0.33, 0.65, 0.46, 1.0], 'width': 1, 'height': 1, 'filterCB': self.equalize,                                'filter': None}
         self.reg['target']    = {'rect': [0.33, 0.27, 0.66, 0.70], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.orange_2_color_range}   # also called destination
-        self.reg['target_occluded']    = {'rect': [0.33, 0.27, 0.66, 0.70], 'width': 1, 'height': 1, 'filterCB': self.equalize, 'filter': None} 
+        self.reg['target_occluded']    = {'rect': [0.40, 0.35, 0.60, 0.55], 'width': 1, 'height': 1, 'filterCB': self.equalize, 'filter': None} 
         self.reg['sun']       = {'rect': [0.30, 0.30, 0.70, 0.68], 'width': 1, 'height': 1, 'filterCB': self.filter_sun, 'filter': None}
         self.reg['disengage'] = {'rect': [0.42, 0.65, 0.60, 0.80], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.blue_sco_color_range}
         self.reg['sco']       = {'rect': [0.42, 0.65, 0.60, 0.80], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.blue_sco_color_range}
@@ -238,14 +238,10 @@ class Screen_Regions:
         # H must be the best match
         return image, (minVal_h, maxVal_h, minLoc_h, maxLoc_h), match_h
 
-    def detect_dashed_circle(self, region_name: str, expected_radius_px: float = None,
-                               radius_tolerance: float = 0.3, ring_score_thresh: float = 0.35,
-                               min_gap_gain: float = 0.1,
-                               max_run_length: int = 12,
-                               debug_image: np.ndarray = None) -> tuple:
+    def detect_dashed_circle(self, region_name, expected_radius_px=None, radius_tolerance=0.2, 
+                             ring_score_thresh=0.5, min_gap_gain=0.15, max_run_length=20, debug_image=None):
         """
-        Detect a dashed/dotted circle (occluded target reticle) using shape-based analysis.
-        This is illumination-invariant and works when template matching fails on bright backgrounds.
+        Detects if a dashed circle exists in the region (used for occlusion detection).
         
         @param region_name: The screen region to analyze (e.g. 'target_occluded').
         @param expected_radius_px: Expected radius in pixels. If None, derived from template size.
@@ -384,16 +380,26 @@ class Screen_Regions:
                      # Find a starting 0 to properly count runs from a gap, or just use the doubled max method
                      temp_max_on = 0
                      temp_curr_on = 0
+                     temp_max_off = 0
+                     temp_curr_off = 0
+                     
                      for val in seq_doubled:
                          if val == 1:
                              temp_curr_on += 1
+                             if temp_curr_off > temp_max_off:
+                                 temp_max_off = temp_curr_off
+                             temp_curr_off = 0
                          else:
+                             temp_curr_off += 1
                              if temp_curr_on > temp_max_on:
                                  temp_max_on = temp_curr_on
                              temp_curr_on = 0
+                             
                      longest_on = temp_max_on
-                     # Cap at sample size (if full ring is ON)
                      if longest_on > num_samples: longest_on = num_samples
+                     
+                     longest_off = temp_max_off
+                     if longest_off > num_samples: longest_off = num_samples
 
                 # Run count is roughly transitions / 2
                 run_count = transitions // 2
@@ -408,6 +414,7 @@ class Screen_Regions:
                 coverage_max = 0.85  # Reject if > 85% of ring is raw edges (solid ring)
                 min_runs = 6         # At least 6 dashes
                 min_gap_gain_local = 0.01 # Override argument for now
+                min_gap_length = 2   # Require at least 2 consecutive 'off' samples (approx 10 degrees) to act as a real gap
                 
                 # Center offset check (Target should be roughly centered in the region)
                 # Calculate normalized distance from center (0.0 = center, 1.0 = corner)
@@ -421,6 +428,7 @@ class Screen_Regions:
                     (run_count >= min_runs) and
                     (gap_gain >= min_gap_gain_local) and
                     (longest_on <= max_run_length) and
+                    (longest_off >= min_gap_length) and
                     (dist_norm <= max_center_offset)
                 )
                 
@@ -430,6 +438,7 @@ class Screen_Regions:
                     'runs': run_count,
                     'gap_gain': gap_gain,
                     'longest_on': longest_on,
+                    'longest_off': longest_off,
                     'ring_support': ring_support,
                     'passes': passes_dash_check
                 }
