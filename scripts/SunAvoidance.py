@@ -49,8 +49,8 @@ class SunAvoidance:
         # In this case, we lower the threshold to strictly avoid ANY sun glare.
         is_occluded = self.ap.is_destination_occluded(scr_reg)
 
-        # Default threshold is 5%, but if occluded, be super sensitive (1%)
-        threshold = 1 if is_occluded else 5
+        # Default threshold is 25%, but if occluded, be super sensitive (1%)
+        threshold = 1 if is_occluded else 20
         
         sun_percent = scr_reg.sun_percent(scr_reg.screen)
         
@@ -73,14 +73,15 @@ class SunAvoidance:
         start_time = time.time()
 
         # Phase 1: Pitch up until sun is no longer directly ahead
+        phase1_success = False
         logger.debug('SunAvoidance: Phase 1 - Pitching away from sun')
         self.ap.keys.send('PitchUpButton', state=1)
 
-        # We loop until sun_percent drops below the threshold (or 5% if we want to be less strict on exit, 
-        # but sticking to threshold is safer).
+        # We loop until sun_percent drops below the threshold
         while True:
             current_sun = scr_reg.sun_percent(scr_reg.screen)
-            if current_sun <= 5: # Use standard threshold for "clear enough" to stop pitching
+            if current_sun <= threshold: # Use calculated threshold for "clear enough" to stop pitching
+                phase1_success = True
                 break
 
             # Check for interdiction during maneuver
@@ -110,6 +111,14 @@ class SunAvoidance:
             time.sleep(-1.0 * sun_pitch_up_time)
             self.ap.keys.send('PitchDownButton', state=0)
 
+        # Check if Phase 1 was successful (sun cleared)
+        if phase1_success:
+            logger.info('SunAvoidance: Phase 1 success, skipping Phase 2')
+            self.ap.ap_ckb('log', 'Sun cleared, skipping fly away')
+            # Reduce speed to 50% before returning (matching end of script behavior)
+            self.ap.keys.send('SetSpeed50')
+            return True
+
         # Phase 2: Continue flying away from sun for the configured duration
         logger.debug(f'SunAvoidance: Phase 2 - Flying away for {avoidance_duration} seconds')
         self.ap.ap_ckb('log', f'Flying away from sun for {avoidance_duration}s')
@@ -127,7 +136,7 @@ class SunAvoidance:
 
             # Check if we somehow ended up facing the sun again (unlikely but possible)
             # Use standard threshold here to avoid excessive jitter
-            if scr_reg.sun_percent(scr_reg.screen) > 5:
+            if scr_reg.sun_percent(scr_reg.screen) > threshold:
                 logger.debug('SunAvoidance: Sun re-detected, resuming pitch up')
                 self.ap.keys.send('PitchUpButton', state=1)
                 time.sleep(1.0)
@@ -155,5 +164,5 @@ class SunAvoidance:
             bool: True if sun is blocking, False otherwise.
         """
         sun_brightness_percent = scr_reg.sun_percent(scr_reg.screen)
-        threshold = 5  # Percentage threshold for sun detection
+        threshold = 20  # Percentage threshold for sun detection
         return sun_brightness_percent > threshold

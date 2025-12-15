@@ -1,4 +1,6 @@
 import math
+import time
+from time import sleep
 import traceback
 from enum import Enum
 from math import atan, degrees
@@ -1295,7 +1297,7 @@ class EDAutopilot:
         if self.jn.ship_state()['status'] != "in_space":
             logger.error('In dock(), after wait, but still not in_space')
 
-        sleep(5)  # wait 5 seconds to get to 7.5km to request docking
+        sleep(15) # Wait for ship to settle after disengage
         self.keys.send('SetSpeed50')
 
         if self.jn.ship_state()['status'] != "in_space":
@@ -1303,8 +1305,37 @@ class EDAutopilot:
             logger.error('In dock(), after long wait, but still not in_space')
             raise Exception('Docking failed (not in space)')
 
-        sleep(12)
-        # At this point (of sleep()) we should be < 7.5km from the station.  Go 0 speed
+        # Intelligent approach using OCR distance
+        start_time = time.time()
+        while True:
+            # Check for timeout (120 seconds should be plenty for < 20km)
+            if time.time() - start_time > 120:
+                 logger.warning("Docking approach timed out taking too long")
+                 break 
+
+            dist = self.nav_panel.get_distance_to_station()
+            # Always close panel after check to ensure safe flight and key handling
+            self.nav_panel.hide_nav_panel()
+
+            if dist is not None:
+                 self.ap_ckb('log', f"Distance to station: {dist:.1f}km")
+                 if dist <= 7.3:
+                     break
+                 
+                 # Calculate wait time based on distance
+                 if dist > 25:
+                     sleep(15)
+                 elif dist > 15:
+                     sleep(10)
+                 elif dist > 10:
+                     sleep(5)
+                 else:
+                     sleep(2)
+            else:
+                 logger.warning("Could not read distance to station during approach")
+                 sleep(5)
+
+        # At this point we should be < 7.5km from the station.  Go 0 speed
         # if we get docking granted ED's docking computer will take over
         self.keys.send('SetSpeedZero', repeat=2)
         sleep(3)  # Wait for ship to come to stop
@@ -1322,7 +1353,6 @@ class EDAutopilot:
                 if self.jn.ship_state()['no_dock_reason'] == "Distance":
                     self.keys.send('SetSpeed50')
                     sleep(5)
-                    self.keys.send('SetSpeedZero', repeat=2)
                 sleep(3)  # Wait for ship to come to stop
                 # Request docking through Nav panel.
                 self.request_docking()
@@ -1343,6 +1373,7 @@ class EDAutopilot:
             raise Exception('Docking failed (Did not get docking authorization)')
         else:
             self.ap_ckb('log+vce', "Docking request granted")
+            self.keys.send('SetSpeedZero')
             # allow auto dock to take over
             for i in range(self.config['WaitForAutoDockTimer']):
                 sleep(1)
