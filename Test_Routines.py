@@ -1,292 +1,213 @@
-import logging
 import cv2
 import os
-
-from ED_AP import EDAutopilot
-from Screen_Regions import *
-from Overlay import *
-from Screen import *
-from Image_Templates import *
-from time import sleep
+import sys
 import numpy as np
 
-"""
-File:Test_Routines.py    
+# Import production classes (assuming strict file structure)
+import Screen_Regions
+import Image_Templates
 
-Description:
-  Class to allow testing 
-"""
+class StaticScreen:
+    """ Mimics Screen.py but operates on a static image frame """
+    def __init__(self, frame_bgr):
+        self.frame = frame_bgr
+        self.screen_height, self.screen_width = frame_bgr.shape[:2]
+        # Calculate scale relative to reference 3440x1440
+        # If image is small (likely a crop), assume 1.0 scale to preserve template detail
+        if self.screen_width < 1920:
+             self.scaleX = 1.0
+             self.scaleY = 1.0
+        else:
+             self.scaleX = self.screen_width / 3440.0
+             self.scaleY = self.screen_height / 1440.0
+        
+    def get_screen_region(self, rect, rgb=False):
+        """ Returns the sub-image for the given rect [x1, y1, x2, y2] """
+        x1, y1, x2, y2 = rect
+        # Clamp to image bounds
+        x1 = max(0, min(x1, self.screen_width))
+        y1 = max(0, min(y1, self.screen_height))
+        x2 = max(0, min(x2, self.screen_width))
+        y2 = max(0, min(y2, self.screen_height))
+        
+        region = self.frame[y1:y2, x1:x2]
+        
+        if rgb:
+            return cv2.cvtColor(region, cv2.COLOR_BGR2RGB)
+        return region # Return BGR by default (matches Screen.get_screen_region(rgb=False))
+
+
+def test_occlusion_logic(scr_reg, frame, path):
+    """
+    Simulate the is_destination_occluded logic from ED_AP.py and print diagnostics.
+    
+    This tests:
+    1. Solid target match (target template) - VETO check
+    2. Occluded target match (target_occluded template)
+    3. Dashed circle shape detection (fallback)
+    4. Final decision: occluded=True/False
+    """
+    print(f"\n{'='*60}")
+    print(f"Testing: {os.path.basename(path)}")
+    print(f"Frame size: {frame.shape[1]}x{frame.shape[0]}, Scale: {scr_reg.screen.scaleX:.3f}")
+    print(f"{'='*60}")
+    
+    try:
+        # ============ SOLID TARGET CHECK (VETO) ============
+        print("\n[1] Solid Target Check (VETO)")
+        _, (_, target_val_p1, _, _), _ = scr_reg.match_template_in_region('target', 'target')
+        _, (_, target_val_x3, _, _), _ = scr_reg.match_template_in_region_x3('target', 'target')
+        target_val = max(target_val_p1, target_val_x3)
+        target_thresh = scr_reg.target_thresh
+        target_visible = target_val >= target_thresh
+        
+        print(f"    target match (pass1): {target_val_p1:.4f}")
+        print(f"    target match (x3):    {target_val_x3:.4f}")
+        print(f"    target best:          {target_val:.4f} (thresh: {target_thresh:.2f})")
+        print(f"    VETO active:          {'YES - Target VISIBLE' if target_visible else 'NO'}")
+        
+        # ============ OCCLUDED TARGET CHECK ============
+        print("\n[2] Occluded Target Check (Template)")
+        _, (_, occ_val_p1, _, _), _ = scr_reg.match_template_in_region('target_occluded', 'target_occluded')
+        _, (_, occ_val_x3, _, _), _ = scr_reg.match_template_in_region_x3('target_occluded', 'target_occluded')
+        occ_val = max(occ_val_p1, occ_val_x3)
+        occ_thresh = scr_reg.target_occluded_thresh
+        occ_template_detected = occ_val >= occ_thresh
+        
+        print(f"    target_occluded match (pass1): {occ_val_p1:.4f}")
+        print(f"    target_occluded match (x3):    {occ_val_x3:.4f}")
+        print(f"    target_occluded best:          {occ_val:.4f} (thresh: {occ_thresh:.2f})")
+        print(f"    Template detects occluded:     {'YES' if occ_template_detected else 'NO'}")
+        
+        # ============ DASHED CIRCLE FALLBACK ============
+        print("\n[3] Dashed Circle Fallback (Shape Detection)")
+        circle_found = False
+        circle_score = 0.0
+        circle_info = {}
+        if not occ_template_detected:
+            circle_found, circle_score, circle_result, circle_info = scr_reg.detect_dashed_circle(
+                'target_occluded',
+                ring_score_thresh=0.40,
+                min_gap_gain=0.1
+            )
+            print(f"    circle_found:   {circle_found}")
+            print(f"    circle_score:   {circle_score:.3f}")
+            print(f"    candidates:     {circle_info.get('candidates', 0)}")
+            print(f"    coverage:       {circle_info.get('coverage', 0):.2f}")
+            print(f"    runs:           {circle_info.get('runs', 0)}")
+            print(f"    gap_gain:       {circle_info.get('gap_gain', 0):.3f}")
+        else:
+            print("    (Skipped - template already detected occlusion)")
+        
+        # ============ FINAL DECISION ============
+        print("\n[4] Final Decision")
+        if target_visible:
+            final_occluded = False
+            reason = "VETO: Solid target visible"
+        elif occ_template_detected:
+            final_occluded = True
+            reason = "Template matched occluded target"
+        elif circle_found:
+            final_occluded = True
+            reason = "Circle shape detected"
+        else:
+            final_occluded = False
+            reason = "No occlusion detected"
+        
+        status = "[OCCLUDED]" if final_occluded else "[NOT OCCLUDED]"
+        print(f"    {status} - {reason}")
+        
+        return final_occluded, target_val, occ_val, circle_score
+        
+    except Exception as e:
+        print(f"    [ERROR] Template matching failed: {e}")
+        print(f"    (Image may be too small or mismatched resolution)")
+        return None, 0.0, 0.0, 0.0
 
 
 def main():
-    # Uncomment one tests to be performed as each runs in a loop until exited.
-    # Run this file instead of the main EDAPGUI file.
-    logger.setLevel(logging.DEBUG)  # Default to log all debug when running this file.
-
-    # Rescale screenshots from the user scaling (i.e. 1920x1080 [0.75,0.75]
-    # to the default scaling of 3440x1440 [1.0, 1.0]. Note the scaling is by
-    # the ratio, not the resolution. Refer to Screen.py for resolution to
-    # ratio conversions.
-    # This only needs to be competed for new screenshots that were not take
-    # at 3440x1440. Once complete, remove the original images and move the
-    # converted images to relevant test folder.
-    #
-    # Does NOT require Elite Dangerous to be running.
-    # ======================================================================
-    # rescale_screenshots('test/images-to-rescale', 0.76, 0.76)
-
-    # Shows filtering and matching for the specified region...
-    # Requires Elite Dangerous to be running.
-    # ========================================================
-    # template_matching_test('compass', 'compass')
-    # template_matching_test('compass','navpoint')
-    # template_matching_test('target', 'target')
-    template_matching_test('target_occluded', 'target_occluded')
-
-    # More complicated specific test cases...
-    # =======================================
-    # Requires Elite Dangerous to be running.
-    # compass_test()
-
-    # Shows regions on the Elite window...
-    # Requires Elite Dangerous to be running.
-    # =======================================
-    #wanted_regions = ["compass", "target", "nav_panel", "disengage", "fss", "mission_dest", "missions", "sun"]
-    # wanted_regions = ["compass", "target", "nav_panel", "disengage"]  # The more common regions for navigation
-    #show_regions(wanted_regions)
-
-    # HSV Tester...
-    #
-    # Does NOT require Elite Dangerous to be running.
-    # ===============================================
-    # hsv_tester("test/compass/Screenshot 2024-07-04 20-01-49.png")
-    # hsv_tester("test/disengage/Screenshot 2024-08-13 21-32-58.png")
-    # hsv_tester("test/navpoint/Screenshot 2024-07-04 20-02-01.png")
-    # hsv_tester("test/navpoint-behind/Screenshot 2024-07-04 20-01-33.png")
-    # hsv_tester("test/target/Screenshot 2024-07-04 23-22-02.png")
-    # hsv_tester("test/target-occluded/Screenshot 2025-05-04 16-07-09_cr.png")
-
-def draw_match_rect(img, pt1, pt2, color, thick):
-    """ Utility function to add a rectangle to an image. """
-    wid = pt2[0] - pt1[0]
-    hgt = pt2[1] - pt1[1]
-
-    if wid < 20:
-        # cv2.rectangle(screen, pt, (pt[0] + compass_width, pt[1] + compass_height),  (0,0,255), 2)
-        cv2.rectangle(img, pt1, pt2, color, thick)
+    # Collect test images
+    image_paths = []
+    
+    if len(sys.argv) > 1:
+        image_paths = sys.argv[1:]
     else:
-        len_wid = wid / 5
-        len_hgt = hgt / 5
-        half_wid = wid / 2
-        half_hgt = hgt / 2
-        tic_len = thick - 1
-        # top
-        cv2.line(img, (int(pt1[0]), int(pt1[1])), (int(pt1[0] + len_wid), int(pt1[1])), color, thick)
-        cv2.line(img, (int(pt1[0] + (2 * len_wid)), int(pt1[1])), (int(pt1[0] + (3 * len_wid)), int(pt1[1])), color, 1)
-        cv2.line(img, (int(pt1[0] + (4 * len_wid)), int(pt1[1])), (int(pt2[0]), int(pt1[1])), color, thick)
-        # top tic
-        cv2.line(img, (int(pt1[0] + half_wid), int(pt1[1])), (int(pt1[0] + half_wid), int(pt1[1]) - tic_len), color,
-                 thick)
-        # bot
-        cv2.line(img, (int(pt1[0]), int(pt2[1])), (int(pt1[0] + len_wid), int(pt2[1])), color, thick)
-        cv2.line(img, (int(pt1[0] + (2 * len_wid)), int(pt2[1])), (int(pt1[0] + (3 * len_wid)), int(pt2[1])), color, 1)
-        cv2.line(img, (int(pt1[0] + (4 * len_wid)), int(pt2[1])), (int(pt2[0]), int(pt2[1])), color, thick)
-        # bot tic
-        cv2.line(img, (int(pt1[0] + half_wid), int(pt2[1])), (int(pt1[0] + half_wid), int(pt2[1]) + tic_len), color,
-                 thick)
-        # left
-        cv2.line(img, (int(pt1[0]), int(pt1[1])), (int(pt1[0]), int(pt1[1] + len_hgt)), color, thick)
-        cv2.line(img, (int(pt1[0]), int(pt1[1] + (2 * len_hgt))), (int(pt1[0]), int(pt1[1] + (3 * len_hgt))), color, 1)
-        cv2.line(img, (int(pt1[0]), int(pt1[1] + (4 * len_hgt))), (int(pt1[0]), int(pt2[1])), color, thick)
-        # left tic
-        cv2.line(img, (int(pt1[0]), int(pt1[1] + half_hgt)), (int(pt1[0] - tic_len), int(pt1[1] + half_hgt)), color,
-                 thick)
-        # right
-        cv2.line(img, (int(pt2[0]), int(pt1[1])), (int(pt2[0]), int(pt1[1] + len_hgt)), color, thick)
-        cv2.line(img, (int(pt2[0]), int(pt1[1] + (2 * len_hgt))), (int(pt2[0]), int(pt1[1] + (3 * len_hgt))), color, 1)
-        cv2.line(img, (int(pt2[0]), int(pt1[1] + (4 * len_hgt))), (int(pt2[0]), int(pt2[1])), color, thick)
-        # right tic
-        cv2.line(img, (int(pt2[0]), int(pt1[1] + half_hgt)), (int(pt2[0] + tic_len), int(pt1[1] + half_hgt)), color,
-                 thick)
+        # Default: scan both test/target-occluded and test/target directories
+        test_dirs = [
+            os.path.join(os.getcwd(), 'test', 'target-occluded'),
+            os.path.join(os.getcwd(), 'test', 'target'),
+        ]
+        
+        for test_dir in test_dirs:
+            if os.path.exists(test_dir):
+                print(f"Scanning: {test_dir}")
+                for f in os.listdir(test_dir):
+                    if f.lower().endswith(('.png', '.bmp', '.jpg')):
+                        image_paths.append(os.path.join(test_dir, f))
+        
+        if not image_paths:
+            print("No images found in test directories.")
+            print("Usage: python Test_Routines.py [image1.png] [image2.png] ...")
+            return
 
+    print(f"\nFound {len(image_paths)} test image(s)\n")
 
-def compass_test():
-    """ Performs a compass test. """
-    ed_ap = EDAutopilot(cb=None)
-    scr = ed_ap.scr
+    results = []
+    
+    for path in image_paths:
+        if not os.path.exists(path):
+            print(f"File not found: {path}")
+            continue
+            
+        frame = cv2.imread(path)
+        if frame is None:
+             print(f"Could not load image: {path}")
+             continue
+        
+        # Initialize environment
+        static_screen = StaticScreen(frame)
+        templ = Image_Templates.Image_Templates(static_screen.scaleX, static_screen.scaleY, static_screen.scaleX)
+        scr_reg = Screen_Regions.Screen_Regions(static_screen, templ)
+        
+        # Run the occlusion test
+        final_occluded, target_val, occ_val, circle_score = test_occlusion_logic(scr_reg, frame, path)
+        
+        results.append({
+            'path': path,
+            'occluded': final_occluded,
+            'target_val': target_val,
+            'occ_val': occ_val,
+            'circle_score': circle_score
+        })
+        
+        # Debug image (only if test succeeded)
+        if final_occluded is not None:
+            dbg = frame.copy()
+            roi_rect = scr_reg.reg['target_occluded']['rect']
+            color = (0, 0, 255) if final_occluded else (0, 255, 0)
+            cv2.rectangle(dbg, (roi_rect[0], roi_rect[1]), (roi_rect[2], roi_rect[3]), color, 2)
+            label = "OCCLUDED" if final_occluded else "CLEAR"
+            cv2.putText(dbg, label, (roi_rect[0], roi_rect[1] - 10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+            
+            out_name = f"test_result_{os.path.basename(path)}"
+            cv2.imwrite(out_name, dbg)
 
-    templ = Image_Templates(scr.scaleX, scr.scaleY, ed_ap.compass_scale)
-    scr_reg = Screen_Regions(scr, templ)
-
-    while True:
-        region_name = 'compass'
-        template = 'compass'
-
-        img_region, (minVal, maxVal, minLoc, maxLoc), match = scr_reg.match_template_in_region(region_name, template)
-        pt = maxLoc
-        c_wid = scr_reg.templates.template['compass']['width']
-        c_hgt = scr_reg.templates.template['compass']['height']
-        draw_match_rect(img_region, pt, (pt[0] + c_wid, pt[1] + c_hgt), (0, 0, 255), 2)
-        cv2.putText(img_region, f'Match: {maxVal:5.2f}', (1, 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35,
-                    (255, 255, 255), 1, cv2.LINE_AA)
-        cv2.imshow(region_name, img_region)
-        cv2.imshow(template + ' match', match)
-
-        key = cv2.waitKey(1)
-        if key == 27:  # ESC
-            break
-
-
-def template_matching_test(region_name, template):
-    """ To test the template matching. Using the provided region and template.
-    :param region_name: The name of the region with the required filter to apply to the image.
-    :param template: The name of the template to find in each file being tested. """
-    #ed_ap = EDAutopilot(cb=None)
-    #scr = ed_ap.scr
-    scr = Screen(cb=None)
-
-    templ = Image_Templates(scr.scaleX, scr.scaleY, scr.scaleX)
-
-    scr_reg = Screen_Regions(scr, templ)
-
-    while True:
-        img_region, (minVal, maxVal, minLoc, maxLoc), match = scr_reg.match_template_in_region(region_name, template)
-        cv2.putText(img_region, f'Match: {maxVal:5.2f}', (1, 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35,
-                    (255, 255, 255), 1, cv2.LINE_AA)
-        cv2.imshow(region_name, img_region)
-        cv2.imshow(template + ' match', match)
-
-        key = cv2.waitKey(10)
-        if key == 27:  # ESC
-            break
-
-
-def show_regions(region_names):
-    """ Draw a rectangle indicating the given region on the Elite Dangerous window.
-        :param region_names: An array names of the regions to indicate on screen (i.e. ["compass", "target"])."""
-    ed_ap = EDAutopilot(cb=None)
-    scr = ed_ap.scr
-    ov = ed_ap.overlay
-
-    templ = Image_Templates(scr.scaleX, scr.scaleY, scr.scaleX)
-    scrReg = Screen_Regions(scr, templ)
-
-    overlay_colors = [
-        (255, 255, 255),
-        (255, 0, 0),
-        (0, 255, 0),
-        (0, 0, 255),
-        (255, 255, 0),
-        (0, 255, 255),
-        (255, 0, 255),
-        (192, 192, 192),
-        (128, 128, 128),
-        (128, 0, 0),
-        (128, 128, 0),
-        (0, 128, 0),
-        (128, 0, 128),
-        (0, 128, 128),
-        (0, 0, 128)
-    ]
-
-    for i, key in enumerate(scrReg.reg):
-        #tgt = scrReg.capture_region_filtered(scr, key)
-        #print(key)
-        #print(scrReg.reg[key])
-        if key in region_names:
-            ov.overlay_rect(key, (scrReg.reg[key]['rect'][0], scrReg.reg[key]['rect'][1]),
-                            (scrReg.reg[key]['rect'][2], scrReg.reg[key]['rect'][3]),
-                            overlay_colors[i+1], 2)
-            ov.overlay_floating_text(key, key, scrReg.reg[key]['rect'][0], scrReg.reg[key]['rect'][1],
-                                     overlay_colors[i+1])
-
-    ov.overlay_paint()
-
-    sleep(10)
-    ov.overlay_quit()
-    sleep(2)
-
-
-def hsv_tester(image_path):
-    """ Brings up a HSV test window with sliders to check the 'inRange' function on the provided image.
-        Change the default values below where indicated to the values associated with the appropriate
-        template in image_template.py.
-        :param image_path: The file path of the image to test. """
-    cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL) # cv2.WINDOW_AUTOSIZE)
-
-    cv2.createTrackbar("L - H", "Trackbars", 0, 179, callback)
-    cv2.createTrackbar("L - S", "Trackbars", 0, 255, callback)
-    cv2.createTrackbar("L - V", "Trackbars", 0, 255, callback)
-    cv2.createTrackbar("U - H", "Trackbars", 255, 179, callback)
-    cv2.createTrackbar("U - S", "Trackbars", 255, 255, callback)
-    cv2.createTrackbar("U - V", "Trackbars", 255, 255, callback)
-
-    frame = cv2.imread(image_path)
-
-    # Set default values
-    cv2.setTrackbarPos("L - H", "Trackbars", 43)
-    cv2.setTrackbarPos("L - S", "Trackbars", 35)
-    cv2.setTrackbarPos("L - V", "Trackbars", 100)
-    cv2.setTrackbarPos("U - H", "Trackbars", 100)
-    cv2.setTrackbarPos("U - S", "Trackbars", 255)
-    cv2.setTrackbarPos("U - V", "Trackbars", 255)
-
-    while True:
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        l_h = cv2.getTrackbarPos("L - H", "Trackbars")
-        l_s = cv2.getTrackbarPos("L - S", "Trackbars")
-        l_v = cv2.getTrackbarPos("L - V", "Trackbars")
-        u_h = cv2.getTrackbarPos("U - H", "Trackbars")
-        u_s = cv2.getTrackbarPos("U - S", "Trackbars")
-        u_v = cv2.getTrackbarPos("U - V", "Trackbars")
-
-        lower_range = np.array([l_h, l_s, l_v])
-        upper_range = np.array([u_h, u_s, u_v])
-        mask = cv2.inRange(hsv, lower_range, upper_range)
-
-        result = cv2.bitwise_and(frame, frame, mask=mask)
-
-        cv2.imshow("original", frame)
-        cv2.imshow("mask", mask)
-        cv2.imshow("result", result)
-
-        key = cv2.waitKey(1)
-        if key == 27:  # ESC
-            break
-
-    cv2.destroyAllWindows()
-
-
-def rescale_screenshots(directory, scalex, scaley):
-    """ Rescale all images in a folder. Also convert BMP to PNG
-    :param directory: The directory to process.
-    :param scalex: The X scaling of the original image.
-    :param scaley: The scaling of the original image. """
-
-    # Calc factor to scale image up/down
-    newScaleX = 1.0 / scalex
-    newScaleY = 1.0 / scaley
-
-    directory_out = os.path.join(directory, 'out')
-    if not os.path.exists(directory_out):
-        os.makedirs(directory_out)
-
-    for filename in os.listdir(directory):
-        if filename.endswith(".png") or filename.endswith(".bmp"):
-            image_path = os.path.join(directory, filename)
-            image_out_path = os.path.join(directory_out, filename.replace('bmp', 'png'))
-
-            image = cv2.imread(image_path)
-
-            # Scale image to user scaling
-            image = cv2.resize(image, (0, 0), fx=newScaleX, fy=newScaleY)
-            cv2.imwrite(image_out_path, image)
-
-
-def callback(value):
-    print(value)
+    # Summary
+    print(f"\n{'='*60}")
+    print("SUMMARY")
+    print(f"{'='*60}")
+    for r in results:
+        if r['occluded'] is None:
+            status = "[ERROR]   "
+        elif r['occluded']:
+            status = "[OCCLUDED]"
+        else:
+            status = "[CLEAR]   "
+        print(f"  {status} {os.path.basename(r['path']):<40} "
+              f"target={r['target_val']:.3f} occ={r['occ_val']:.3f} circle={r['circle_score']:.3f}")
 
 
 if __name__ == "__main__":
     main()
+

@@ -1,0 +1,235 @@
+06:16:46.749 INFO     Reading ED graphics display settings from 'C:\Users\GeorgiSundberg\AppData\Local\Frontier Developments\Elite Dangerous\Options\Graphics\DisplaySettings.xml'.
+06:16:46.750 INFO     Reading ED graphics settings from 'C:\Users\GeorgiSundberg\AppData\Local\Frontier Developments\Elite Dangerous\Options\Graphics\Settings.xml'.
+06:16:46.752 DEBUG    Elite Dangerous Display Config 'ScreenWidth': 3440.
+06:16:46.752 DEBUG    Elite Dangerous Display Config 'ScreenHeight': 1440.
+06:16:46.752 DEBUG    Elite Dangerous Display Config 'Fullscreen': Borderless.
+06:16:46.752 DEBUG    Elite Dangerous Display Config 'Monitor': 2.
+06:16:46.752 DEBUG    Elite Dangerous Graphics Options 'FOV': 56.249001.
+06:16:46.754 DEBUG    Found Elite Dangerous window position: (0, -1440, 3440, 0)
+06:16:46.755 DEBUG    Elite Dangerous is on monitor 2.
+06:16:46.756 DEBUG    read json:{'1024x768': [0.39, 0.39], '1080x1080': [0.5, 0.5], '1280x800': [0.48, 0.48], '1280x1024': [0.5, 0.5], '1600x900': [0.6, 0.6], '1920x1080': [0.75, 0.75], '1920x1200': [0.73, 0.73], '1920x1440': [0.8, 0.8], '2560x1080': [0.75, 0.75], '2560x1440': [1.0, 1.0], '3440x1440': [1.0, 1.0], '3840 x 2160': [1.52, 1.52], 'Calibrated': [-1.0, -1.0]}
+06:16:46.756 DEBUG    screen size: 3440 1440
+06:16:46.756 DEBUG    Default scale X, Y: 1.0, 1.0
+06:16:47.849 INFO     Opening new Journal: C:\Users\GeorgiSundberg\Saved Games\Frontier Developments\Elite Dangerous\Journal.2025-12-15T060153.01.log
+06:16:47.860 DEBUG    Journal*.log: read: 1 ship: {'time': 628, 'odyssey': True, 'status': 'in_space', 'type': None, 'location': None, 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': None, 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': None, 'fuel_level': None, 'fuel_percent': 10, 'is_scooping': False, 'cur_star_system': '', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': None, 'ship_size': None, 'has_fuel_scoop': None, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': None, 'has_std_dock_comp': None, 'has_sco_fsd': None, 'StationServices': None}
+06:16:47.861 DEBUG    Journal*.log: read: 8 ship: {'time': 628, 'odyssey': True, 'status': 'in_space', 'type': 'panthermkii', 'location': None, 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': None, 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': '', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': None, 'ship_size': 'L', 'has_fuel_scoop': None, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': None, 'has_std_dock_comp': None, 'has_sco_fsd': None, 'StationServices': None}
+06:16:47.862 DEBUG    Journal*.log: read: 11 ship: {'time': 628, 'odyssey': True, 'status': 'in_space', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': None, 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': None, 'ship_size': 'L', 'has_fuel_scoop': None, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': None, 'has_std_dock_comp': None, 'has_sco_fsd': None, 'StationServices': None}
+06:16:47.862 DEBUG    Journal*.log: read: 15 ship: {'time': 628, 'odyssey': True, 'status': 'in_space', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': None, 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': 1040, 'ship_size': 'L', 'has_fuel_scoop': True, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': True, 'has_std_dock_comp': False, 'has_sco_fsd': True, 'StationServices': None}
+06:16:47.862 DEBUG    Journal*.log: read: 18 ship: {'time': 628, 'odyssey': True, 'status': 'starting_supercruise', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': None, 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': 1040, 'ship_size': 'L', 'has_fuel_scoop': True, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': True, 'has_std_dock_comp': False, 'has_sco_fsd': True, 'StationServices': None}
+06:16:47.862 DEBUG    Journal*.log: read: 82 ship: {'time': 628, 'odyssey': True, 'status': 'in_supercruise', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': None, 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': 1040, 'ship_size': 'L', 'has_fuel_scoop': True, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': True, 'has_std_dock_comp': False, 'has_sco_fsd': True, 'StationServices': None}
+06:16:47.862 DEBUG    Journal*.log: read: 85 ship: {'time': 628, 'odyssey': True, 'status': 'in_space', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': 'HIP 40900 A 3', 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': 1040, 'ship_size': 'L', 'has_fuel_scoop': True, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': True, 'has_std_dock_comp': False, 'has_sco_fsd': True, 'StationServices': None}
+06:16:47.863 DEBUG    Journal*.log: read: 88 ship: {'time': 628, 'odyssey': True, 'status': 'starting_supercruise', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': 'HIP 40900 A 3', 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': 1040, 'ship_size': 'L', 'has_fuel_scoop': True, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': True, 'has_std_dock_comp': False, 'has_sco_fsd': True, 'StationServices': None}
+06:16:47.863 DEBUG    Journal*.log: read: 89 ship: {'time': 628, 'odyssey': True, 'status': 'in_supercruise', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': 'HIP 40900 A 3', 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': 1040, 'ship_size': 'L', 'has_fuel_scoop': True, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': True, 'has_std_dock_comp': False, 'has_sco_fsd': True, 'StationServices': None}
+06:16:47.863 DEBUG    Journal*.log: read: 92 ship: {'time': 628, 'odyssey': True, 'status': 'in_space', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': None, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': 'HIP 40900 A 3', 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': 1040, 'ship_size': 'L', 'has_fuel_scoop': True, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': True, 'has_std_dock_comp': False, 'has_sco_fsd': True, 'StationServices': None}
+06:16:47.863 INFO     Latest keybindings file:C:\Users\GeorgiSundberg\AppData\Local\Frontier Developments\Elite Dangerous\Options\Bindings\Custom.4.2.binds
+06:16:47.868 INFO     Latest keybindings file:C:\Users\GeorgiSundberg\AppData\Local\Frontier Developments\Elite Dangerous\Options\Bindings\Custom.4.2.binds
+06:16:47.873 INFO     	get_bindings_<YawLeftButton>={'key': 75, 'mods': []} Key: <Key_Numpad_4> Mod: < >
+06:16:47.873 INFO     	get_bindings_<YawRightButton>={'key': 77, 'mods': []} Key: <Key_Numpad_6> Mod: < >
+06:16:47.873 INFO     	get_bindings_<RollLeftButton>={'key': 71, 'mods': []} Key: <Key_Numpad_7> Mod: < >
+06:16:47.873 INFO     	get_bindings_<RollRightButton>={'key': 73, 'mods': []} Key: <Key_Numpad_9> Mod: < >
+06:16:47.873 INFO     	get_bindings_<PitchUpButton>={'key': 80, 'mods': []} Key: <Key_Numpad_2> Mod: < >
+06:16:47.873 INFO     	get_bindings_<PitchDownButton>={'key': 72, 'mods': []} Key: <Key_Numpad_8> Mod: < >
+06:16:47.873 INFO     	get_bindings_<SetSpeedZero>={'key': 82, 'mods': []} Key: <Key_Numpad_0> Mod: < >
+06:16:47.873 INFO     	get_bindings_<SetSpeed50>={'key': 76, 'mods': []} Key: <Key_Numpad_5> Mod: < >
+06:16:47.873 INFO     	get_bindings_<SetSpeed100>={'key': 156, 'mods': []} Key: <Key_Numpad_Enter> Mod: < >
+06:16:47.873 INFO     	get_bindings_<HyperSuperCombination>={'key': 181, 'mods': [29]} Key: <Key_Numpad_Divide> Mod: <Key_LeftControl>
+06:16:47.873 INFO     	get_bindings_<SelectTarget>={'key': 83, 'mods': [29]} Key: <Key_Numpad_Decimal> Mod: <Key_LeftControl>
+06:16:47.873 INFO     	get_bindings_<DeployHeatSink>={'key': 79, 'mods': [29]} Key: <Key_Numpad_1> Mod: <Key_LeftControl>
+06:16:47.873 INFO     	get_bindings_<UIFocus>={'key': 42, 'mods': []} Key: <Key_LeftShift> Mod: < >
+06:16:47.873 INFO     	get_bindings_<UI_Up>={'key': 72, 'mods': [56]} Key: <Key_Numpad_8> Mod: <Key_LeftAlt>
+06:16:47.873 INFO     	get_bindings_<UI_Down>={'key': 80, 'mods': [56]} Key: <Key_Numpad_2> Mod: <Key_LeftAlt>
+06:16:47.873 INFO     	get_bindings_<UI_Left>={'key': 75, 'mods': [56]} Key: <Key_Numpad_4> Mod: <Key_LeftAlt>
+06:16:47.873 INFO     	get_bindings_<UI_Right>={'key': 77, 'mods': [56]} Key: <Key_Numpad_6> Mod: <Key_LeftAlt>
+06:16:47.873 INFO     	get_bindings_<UI_Select>={'key': 156, 'mods': [56]} Key: <Key_Numpad_Enter> Mod: <Key_LeftAlt>
+06:16:47.874 INFO     	get_bindings_<UI_Back>={'key': 83, 'mods': [56]} Key: <Key_Numpad_Decimal> Mod: <Key_LeftAlt>
+06:16:47.874 INFO     	get_bindings_<CycleNextPanel>={'key': 73, 'mods': [56]} Key: <Key_Numpad_9> Mod: <Key_LeftAlt>
+06:16:47.875 INFO     	get_bindings_<HeadLookReset>={'key': 76, 'mods': [29]} Key: <Key_Numpad_5> Mod: <Key_LeftControl>
+06:16:47.877 INFO     	get_bindings_<PrimaryFire>={'key': 59, 'mods': [29]} Key: <Key_F1> Mod: <Key_LeftControl>
+06:16:47.877 INFO     	get_bindings_<SecondaryFire>={'key': 60, 'mods': [29]} Key: <Key_F2> Mod: <Key_LeftControl>
+06:16:47.877 INFO     	get_bindings_<ExplorationFSSEnter>={'key': 40, 'mods': [56]} Key: <Key_Apostrophe> Mod: <Key_LeftAlt>
+06:16:47.877 INFO     	get_bindings_<ExplorationFSSQuit>={'key': 40, 'mods': [29]} Key: <Key_Apostrophe> Mod: <Key_LeftControl>
+06:16:47.877 INFO     	get_bindings_<MouseReset>={'key': 81, 'mods': [29]} Key: <Key_Numpad_3> Mod: <Key_LeftControl>
+06:16:47.877 INFO     	get_bindings_<DeployHardpointToggle>={'key': 78, 'mods': [29]} Key: <Key_Numpad_Add> Mod: <Key_LeftControl>
+06:16:47.877 INFO     	get_bindings_<IncreaseEnginesPower>={'key': 200, 'mods': []} Key: <Key_UpArrow> Mod: < >
+06:16:47.878 INFO     	get_bindings_<IncreaseWeaponsPower>={'key': 205, 'mods': []} Key: <Key_RightArrow> Mod: < >
+06:16:47.878 INFO     	get_bindings_<IncreaseSystemsPower>={'key': 203, 'mods': []} Key: <Key_LeftArrow> Mod: < >
+06:16:47.878 INFO     	get_bindings_<GalaxyMapOpen>={'key': 50, 'mods': [29]} Key: <Key_M> Mod: <Key_LeftControl>
+06:16:47.878 INFO     	get_bindings_<CamZoomIn>={'key': 44, 'mods': []} Key: <Key_Z> Mod: < >
+06:16:47.878 INFO     	get_bindings_<SystemMapOpen>={'key': 51, 'mods': [29]} Key: <Key_Comma> Mod: <Key_LeftControl>
+06:16:47.878 INFO     	get_bindings_<UseBoostJuice>={'key': 15, 'mods': []} Key: <Key_Tab> Mod: < >
+06:16:47.878 INFO     	get_bindings_<Supercruise>={'key': 55, 'mods': [29]} Key: <Key_Numpad_Multiply> Mod: <Key_LeftControl>
+06:16:47.878 INFO     	get_bindings_<UpThrustButton>={'key': 19, 'mods': []} Key: <Key_R> Mod: < >
+06:16:47.878 INFO     	get_bindings_<LandingGearToggle>={'key': 74, 'mods': [29]} Key: <Key_Numpad_Subtract> Mod: <Key_LeftControl>
+06:16:47.878 INFO     	get_bindings_<TargetNextRouteSystem>={'key': 82, 'mods': [29]} Key: <Key_Numpad_0> Mod: <Key_LeftControl>
+06:16:47.878 INFO     	get_bindings_<CamTranslateForward>={'key': 17, 'mods': []} Key: <Key_W> Mod: < >
+06:16:47.878 INFO     	get_bindings_<CamTranslateRight>={'key': 32, 'mods': []} Key: <Key_D> Mod: < >
+06:16:47.882 DEBUG    EDWayPoint: read json:{'GlobalShoppingList': {'SystemName': '', 'StationName': '', 'GalaxyBookmarkType': '', 'GalaxyBookmarkNumber': 0, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {'Indite': 0, 'Bertrandite': 999, 'Silver': 0, 'Gold': 0}, 'Comment': None, 'UpdateCommodityCount': True, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '1': {'SystemName': 'Orgen', 'StationName': 'Trailblazer Song', 'GalaxyBookmarkType': '', 'GalaxyBookmarkNumber': 0, 'SystemBookmarkType': 'Navigation Panel', 'SystemBookmarkNumber': 2, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': None, 'UpdateCommodityCount': True, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '2': {'SystemName': 'Synuefe LO-G c27-25', 'StationName': 'Cat Colony', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 3, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': None, 'UpdateCommodityCount': True, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '3': {'SystemName': 'Synuefe ZX-M b54-1', 'StationName': 'System Colonisation Ship', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 1, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {'ALL': 0}, 'BuyCommodities': {}, 'Comment': None, 'UpdateCommodityCount': True, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '4': {'SystemName': 'Lambda-1 Tucanae', 'StationName': 'Riess Hub', 'GalaxyBookmarkType': '', 'GalaxyBookmarkNumber': 0, 'SystemBookmarkType': 'Station', 'SystemBookmarkNumber': 1, 'SellCommodities': {'Water Purifiers': 9999}, 'BuyCommodities': {'Gold': 9999}, 'Comment': None, 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '5': {'SystemName': 'Mbutas', 'StationName': 'P.T.N. DARK SUN H6H-N8T', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 3, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Bertrandite', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '6': {'SystemName': 'Mbutas', 'StationName': 'P.T.N. GHIBLI BOOKBOX GHB-BKB', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 6, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Gold', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '7': {'SystemName': 'Mbutas', 'StationName': 'P.T.N. TAILS TFX-L3W', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 10, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Silver', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '8': {'SystemName': 'Mbutas', 'StationName': 'P.T.N. THORONDOR TNT-95W', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 11, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Indite', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '9': {'SystemName': 'Mbutas', 'StationName': 'P.T.N. CONSISTENCY G2H-N4Y', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 4, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Silver', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '10': {'SystemName': 'Mbutas', 'StationName': 'P.T.N. PIT OF HERESY G1U-1TX', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 9, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Indite', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '11': {'SystemName': 'Mbutas', 'StationName': 'P.T.N EVEREST T9K-5HQ', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 2, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Gold', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '12': {'SystemName': 'Mbutas', 'StationName': 'P.T.N. BLOSSOM WBG-16Q', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 0, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Indite', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '13': {'SystemName': 'Mbutas', 'StationName': 'P.T.N. HADES WNX-33Y', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 7, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': None, 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '14': {'SystemName': 'Mbutas', 'StationName': 'P.T.N. OLYMPUS WBJ-N1Y', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 8, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Bertrandite', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '15': {'SystemName': 'Mbutas', 'StationName': 'PTN ROSIES BAR GFT-N6V', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 12, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Gold', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '16': {'SystemName': 'Mbutas', 'StationName': 'PTN WARDEN OF NOTHING (T7T-6VX)', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 8, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': None, 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '17': {'SystemName': 'Mbutas', 'StationName': 'PTN THE LAVISH CHATEAU GFT-NXF', 'GalaxyBookmarkType': 'System', 'GalaxyBookmarkNumber': 13, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': 'Bertrandite', 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': False, 'Completed': False}, '18': {'SystemName': 'Mbutas', 'StationName': 'Burkin Orbital', 'GalaxyBookmarkType': '', 'GalaxyBookmarkNumber': 0, 'SystemBookmarkType': 'Station', 'SystemBookmarkNumber': 1, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': None, 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': False, 'Completed': False}, '19': {'SystemName': 'Mbutas', 'StationName': 'Dalton', 'GalaxyBookmarkType': '', 'GalaxyBookmarkNumber': 0, 'SystemBookmarkType': 'Station', 'SystemBookmarkNumber': 2, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': None, 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': True, 'Completed': False}, '20': {'SystemName': 'New System', 'StationName': '', 'GalaxyBookmarkType': '', 'GalaxyBookmarkNumber': 0, 'SystemBookmarkType': '', 'SystemBookmarkNumber': 0, 'SellCommodities': {}, 'BuyCommodities': {}, 'Comment': None, 'UpdateCommodityCount': False, 'FleetCarrierTransfer': False, 'Skip': False, 'Completed': False}}
+06:16:48.118 INFO     Starting ED Autopilot V1.7.0.
+06:16:48.226 INFO     ED Autopilot loaded successfully.
+06:16:48.957 INFO     Loaded your custom configuration for panthermkii from ship_configs.json
+06:16:48.971 INFO     Welcome aboard your Panther Clipper Mk II.
+06:16:56.560 DEBUG    Entered: start_sc
+06:16:56.560 INFO     SC Assist start
+06:16:57.097 DEBUG    Running sc_assist
+06:16:57.097 DEBUG    Entered sc_assist
+06:16:57.137 DEBUG    has_destination:0.78103107213974
+06:16:57.140 DEBUG    	send=SetSpeed100,key:{'key': 156, 'mods': []},key_name:Key_Numpad_Enter,hold:None,repeat:1,repeat_delay:None,state:None
+06:16:57.187 INFO     Status update: SC to Target
+06:16:57.494 DEBUG    	send=Supercruise,key:{'key': 55, 'mods': [29]},key_name:Key_Numpad_Multiply,hold:0.001,repeat:1,repeat_delay:None,state:None
+06:17:09.672 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:17:10.026 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:17:10.380 DEBUG    Journal*.log: read: 1 ship: {'time': 628, 'odyssey': True, 'status': 'starting_supercruise', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': False, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': 'HIP 40900 A 3', 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': 1040, 'ship_size': 'L', 'has_fuel_scoop': True, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': True, 'has_std_dock_comp': False, 'has_sco_fsd': True, 'StationServices': None}
+06:17:10.380 DEBUG    Journal*.log: read: 2 ship: {'time': 628, 'odyssey': True, 'status': 'in_supercruise', 'type': 'panthermkii', 'location': 'HIP 40900', 'star_class': None, 'target': None, 'fighter_destroyed': False, 'shieldsup': True, 'under_attack': False, 'interdicted': False, 'no_dock_reason': None, 'mission_completed': 0, 'mission_redirected': 0, 'body': 'HIP 40900 A 3', 'dist_jumped': 0, 'jumps_remains': 0, 'fuel_capacity': 128.0, 'fuel_level': 105.593567, 'fuel_percent': 82, 'is_scooping': False, 'cur_star_system': 'HIP 40900', 'cur_station': '', 'cur_station_type': '', 'cargo_capacity': 1040, 'ship_size': 'L', 'has_fuel_scoop': True, 'SupercruiseDestinationDrop_type': None, 'has_adv_dock_comp': True, 'has_std_dock_comp': False, 'has_sco_fsd': True, 'StationServices': None}
+06:17:10.399 DEBUG    	send=RollRightButton,key:{'key': 73, 'mods': []},key_name:Key_Numpad_9,hold:3.1344,repeat:1,repeat_delay:None,state:None
+06:17:10.420 INFO     Compass Align
+06:17:10.530 DEBUG    Entered: start_robigo
+06:17:10.530 INFO     Robigo Assist start
+06:17:14.706 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:1.849375,repeat:1,repeat_delay:None,state:None
+06:17:17.331 DEBUG    final x:0.04 y:0.07
+06:17:17.353 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:17:17.808 INFO     Target Align
+06:17:17.984 DEBUG    Dashed circle detected via shape analysis (score=0.694, cov=0.60, runs=13, gap=0.10)
+06:17:17.984 DEBUG    Target is occluded via circle detection (score=0.694)
+06:17:17.984 INFO     Target occluded, initiating avoidance maneuver
+06:17:17.984 DEBUG    occluded_reposition: delegating to SupercruiseAvoidance script
+06:17:18.009 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:17:18.025 INFO     Target occluded, avoiding
+06:17:18.025 INFO     Avoidance attempt 1
+06:17:20.362 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:None,repeat:1,repeat_delay:None,state:1
+06:17:32.399 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:None,repeat:1,repeat_delay:None,state:0
+06:17:32.550 WARNING  Escape heading: compass gate timed out after 12.2s
+06:17:32.550 DEBUG    	send=YawRightButton,key:{'key': 77, 'mods': []},key_name:Key_Numpad_6,hold:18.0,repeat:1,repeat_delay:None,state:None
+06:17:32.568 INFO     Compass unreliable, fallback escape
+06:17:51.203 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:2.8125,repeat:1,repeat_delay:None,state:None
+06:17:54.168 DEBUG    	send=SetSpeed100,key:{'key': 156, 'mods': []},key_name:Key_Numpad_Enter,hold:None,repeat:1,repeat_delay:None,state:None
+06:17:54.534 WARNING  SupercruiseAvoidance: Star detected ahead (20% > 5%)
+06:17:54.535 WARNING  SupercruiseAvoidance: Star detected during fly-away! Aborting.
+06:17:54.535 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:17:54.581 INFO     Star detected, aborting
+06:17:54.908 INFO     Compass Align
+06:17:54.911 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:17:55.265 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:17:55.348 INFO     Avoidance attempt 2
+06:17:57.618 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:None,repeat:1,repeat_delay:None,state:1
+06:18:01.345 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:None,repeat:1,repeat_delay:None,state:0
+06:18:01.498 DEBUG    	send=YawRightButton,key:{'key': 77, 'mods': []},key_name:Key_Numpad_6,hold:1.5,repeat:1,repeat_delay:None,state:None
+06:18:03.151 DEBUG    	send=SetSpeed100,key:{'key': 156, 'mods': []},key_name:Key_Numpad_Enter,hold:None,repeat:1,repeat_delay:None,state:None
+06:18:03.517 WARNING  SupercruiseAvoidance: Star detected ahead (73% > 5%)
+06:18:03.517 WARNING  SupercruiseAvoidance: Star detected during fly-away! Aborting.
+06:18:03.517 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:18:03.618 INFO     Star detected, aborting
+06:18:03.892 DEBUG    	send=RollLeftButton,key:{'key': 71, 'mods': []},key_name:Key_Numpad_7,hold:0.4267999999999995,repeat:1,repeat_delay:None,state:None
+06:18:03.948 INFO     Compass Align
+06:18:03.948 DEBUG    Entered: start_fsd
+06:18:03.948 INFO     FSD Route Assist start
+06:18:05.492 DEBUG    	send=PitchDownButton,key:{'key': 72, 'mods': []},key_name:Key_Numpad_8,hold:5.625,repeat:1,repeat_delay:None,state:None
+06:18:11.791 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:1.26625,repeat:1,repeat_delay:None,state:None
+06:18:13.830 DEBUG    final x:0.16 y:0.01
+06:18:13.851 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:18:14.203 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:18:14.262 INFO     Avoidance attempt 3
+06:18:16.556 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:None,repeat:1,repeat_delay:None,state:1
+06:18:20.427 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:None,repeat:1,repeat_delay:None,state:0
+06:18:20.579 DEBUG    	send=YawRightButton,key:{'key': 77, 'mods': []},key_name:Key_Numpad_6,hold:1.5,repeat:1,repeat_delay:None,state:None
+06:18:22.231 DEBUG    	send=SetSpeed100,key:{'key': 156, 'mods': []},key_name:Key_Numpad_Enter,hold:None,repeat:1,repeat_delay:None,state:None
+06:18:22.594 WARNING  SupercruiseAvoidance: Star detected ahead (60% > 5%)
+06:18:22.594 WARNING  SupercruiseAvoidance: Star detected during fly-away! Aborting.
+06:18:22.594 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:18:22.652 INFO     Star detected, aborting
+06:18:22.968 DEBUG    	send=PitchDownButton,key:{'key': 72, 'mods': []},key_name:Key_Numpad_8,hold:5.625,repeat:1,repeat_delay:None,state:None
+06:18:22.980 INFO     Compass Align
+06:18:29.269 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:1.625,repeat:1,repeat_delay:None,state:None
+06:18:31.665 DEBUG    final x:0.16 y:0.04
+06:18:31.683 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:18:32.037 WARNING  SupercruiseAvoidance: Standard attempts failed. Initiating HARD ESCAPE.
+06:18:32.037 DEBUG    	send=SetSpeed50,key:{'key': 76, 'mods': []},key_name:Key_Numpad_5,hold:None,repeat:1,repeat_delay:None,state:None
+06:18:32.038 INFO     Hard Escape Initiated
+06:18:32.038 INFO     Avoidance attempt 100
+06:18:34.390 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:None,repeat:1,repeat_delay:None,state:1
+06:18:38.705 DEBUG    	send=PitchUpButton,key:{'key': 80, 'mods': []},key_name:Key_Numpad_2,hold:None,repeat:1,repeat_delay:None,state:0
+06:18:38.857 DEBUG    	send=YawRightButton,key:{'key': 77, 'mods': []},key_name:Key_Numpad_6,hold:2.25,repeat:1,repeat_delay:None,state:None
+06:18:41.162 DEBUG    Entered: stop_all_assists
+06:18:41.205 DEBUG    Detected 'stop_all_assists' callback msg
+06:18:41.205 DEBUG    Entered: stop_fsd
+06:18:41.205 INFO     FSD Route Assist stop
+06:18:41.205 INFO     Status update: Idle
+06:18:41.259 DEBUG    Caught stop exception
+06:18:41.259 DEBUG    Completed sc_assist
+06:18:41.266 DEBUG    Entered: stop_sc
+06:18:41.266 INFO     SC Assist stop
+06:18:41.267 INFO     Status update: Idle
+06:18:41.409 DEBUG    Entered: stop_robigo
+06:18:41.409 INFO     Robigo Assist stop
+06:18:41.409 INFO     Status update: Idle
+06:18:41.470 INFO     AFK Combat Assist stop
+06:18:41.534 DEBUG    Entered: stop_dss
+06:18:41.534 INFO     DSS Assist stop
+06:18:41.534 INFO     Status update: Idle
+06:18:41.660 DEBUG    Detected 'sc_stop' callback msg
+06:18:41.668 DEBUG    Entered: stop_all_assists
+06:18:41.723 DEBUG    Detected 'stop_all_assists' callback msg
+06:18:41.884 DEBUG    Entered: stop_all_assists
+06:18:41.970 INFO     AFK Combat Assist stop
+06:18:42.033 DEBUG    Entered: stop_dss
+06:18:42.033 INFO     DSS Assist stop
+06:18:42.034 INFO     Status update: Idle
+06:18:42.062 DEBUG    Entered: stop_all_assists
+06:18:42.160 DEBUG    Detected 'stop_all_assists' callback msg
+06:18:42.228 DEBUG    Entered: stop_all_assists
+06:18:42.368 DEBUG    Entered: stop_all_assists
+06:18:42.412 INFO     AFK Combat Assist stop
+06:18:42.473 DEBUG    Entered: stop_dss
+06:18:42.473 INFO     DSS Assist stop
+06:18:42.473 INFO     Status update: Idle
+06:18:42.598 DEBUG    Detected 'stop_all_assists' callback msg
+06:18:42.846 INFO     AFK Combat Assist stop
+06:18:42.906 DEBUG    Entered: stop_dss
+06:18:42.906 INFO     DSS Assist stop
+06:18:42.906 INFO     Status update: Idle
+06:18:43.032 DEBUG    Detected 'stop_all_assists' callback msg
+06:18:43.280 INFO     AFK Combat Assist stop
+06:18:43.341 DEBUG    Entered: stop_dss
+06:18:43.341 INFO     DSS Assist stop
+06:18:43.341 INFO     Status update: Idle
+06:18:43.466 DEBUG    Detected 'stop_all_assists' callback msg
+06:18:43.485 DEBUG    Entered: stop_all_assists
+06:18:43.713 INFO     AFK Combat Assist stop
+06:18:43.775 DEBUG    Entered: stop_dss
+06:18:43.775 INFO     DSS Assist stop
+06:18:43.775 INFO     Status update: Idle
+06:18:43.900 DEBUG    Detected 'stop_all_assists' callback msg
+06:18:44.149 INFO     AFK Combat Assist stop
+06:18:44.211 DEBUG    Entered: stop_dss
+06:18:44.211 INFO     DSS Assist stop
+06:18:44.211 INFO     Status update: Idle
+06:18:44.335 DEBUG    Entered: start_sc
+06:18:44.335 INFO     SC Assist start
+06:18:45.643 DEBUG    Entered: stop_all_assists
+06:18:45.677 DEBUG    Detected 'stop_all_assists' callback msg
+06:18:45.739 DEBUG    Entered: stop_sc
+06:18:45.786 DEBUG    Entered: stop_all_assists
+06:25:41.705 DEBUG    Entered: close_window
+06:25:41.705 DEBUG    Entered: stop_fsd
+06:25:41.705 INFO     FSD Route Assist stop
+06:25:41.705 INFO     Status update: Idle
+06:25:41.705 DEBUG    Entered: stop_sc
+06:25:44.086 DEBUG    Entered: close_window
+06:25:44.086 DEBUG    Entered: stop_fsd
+06:25:44.086 INFO     FSD Route Assist stop
+06:25:44.086 INFO     Status update: Idle
+06:25:44.086 DEBUG    Entered: stop_sc
+06:25:44.721 DEBUG    Entered: close_window
+06:25:44.721 DEBUG    Entered: stop_fsd
+06:25:44.721 INFO     FSD Route Assist stop
+06:25:44.721 INFO     Status update: Idle
+06:25:44.721 DEBUG    Entered: stop_sc
+06:25:45.071 DEBUG    Entered: close_window
+06:25:45.071 DEBUG    Entered: stop_fsd
+06:25:45.071 INFO     FSD Route Assist stop
+06:25:45.071 INFO     Status update: Idle
+06:25:45.071 DEBUG    Entered: stop_sc
+06:25:46.927 DEBUG    Entered: close_window
+06:25:46.927 DEBUG    Entered: stop_fsd
+06:25:46.927 INFO     FSD Route Assist stop
+06:25:46.927 INFO     Status update: Idle
+06:25:46.927 DEBUG    Entered: stop_sc

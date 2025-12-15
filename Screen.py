@@ -209,9 +209,9 @@ class Screen:
             "mon": self.monitor_number,
         }
         image = array(self.mss.grab(monitor))
-        # TODO - mss.grab returns the image in BGR format, so no need to convert to RGB2BGR
-        if rgb:
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # mss.grab() returns BGRA on Windows. Convert to BGR for OpenCV consistency.
+        # The 'rgb' parameter is kept for API compatibility but always returns BGR now.
+        image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
         return image
         
     def get_screen_rect_pct(self, rect):
@@ -222,8 +222,6 @@ class Screen:
         if self.using_screen:
             abs_rect = self.screen_rect_to_abs(rect)
             image = self.get_screen(abs_rect[0], abs_rect[1], abs_rect[2], abs_rect[3])
-            # TODO delete this line when COLOR_RGB2BGR is removed from get_screen()
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             return image
         else:
             if self._screen_image is None:
@@ -246,8 +244,6 @@ class Screen:
         """
         if self.using_screen:
             image = self.get_screen(0, 0, self.screen_width, self.screen_height)
-            # TODO delete this line when COLOR_RGB2BGR is removed from get_screen()
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             return image
         else:
             if self._screen_image is None:

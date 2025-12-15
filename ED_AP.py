@@ -32,6 +32,8 @@ from StatusParser import StatusParser
 from Voice import *
 from Robigo import *
 from TCE_Integration import TceIntegration
+from scripts.SunAvoidance import SunAvoidance
+from scripts.SupercruiseAvoidance import SupercruiseAvoidance
 
 """
 File:EDAP.py    EDAutopilot
@@ -96,6 +98,14 @@ class EDAutopilot:
             "Enable_CV_View": 0,           # Should CV View be enabled by default
             "ShipConfigFile": None,        # Ship config to load on start - deprecated
             "TargetScale": 1.0,            # Scaling of the target when a system is selected
+            "SupercruiseAvoidanceMaxAttempts": 3,
+            "SupercruiseAvoidanceDurationBase": 60,
+            "SupercruiseAvoidanceDurationMax": 120,
+            "SupercruiseAvoidanceHardEscapeSeconds": 120,
+            "SupercruiseAvoidanceYawDegrees": 15,
+            "SupercruiseAvoidanceUseCompassGate": False,
+            "SupercruiseAvoidanceCompassEdgeThreshold": 0.9,
+            "SupercruiseAvoidanceCompassGateTimeoutSeconds": 4,
             "TCEDestinationFilepath": "C:\\TCE\\DUMP\\Destination.json",  # Destination file for TCE
             "TCEInstallationPath": "C:\\TCE",
             "AutomaticLogout": False,      # Logout when we are done with the mission
@@ -106,6 +116,8 @@ class EDAutopilot:
             "EDMesgActionsPort": 15570,
             "EDMesgEventsPort": 15571,
             "DebugOverlay": False,
+            "SunAvoidanceDuration": 20,  # Seconds to fly away from sun before re-aligning to target
+            "SupercruiseAvoidanceDuration": 60,  # Seconds to fly away from planetary obstruction
         }
         # NOTE!!! When adding a new config value above, add the same after read_config() to set
         # a default value or an error will occur reading the new value!
@@ -154,6 +166,19 @@ class EDAutopilot:
                 cnf['EDMesgEventsPort'] = 15571
             if 'DebugOverlay' not in cnf:
                 cnf['DebugOverlay'] = False
+            if 'SunAvoidanceDuration' not in cnf:
+                cnf['SunAvoidanceDuration'] = 20
+            if 'SupercruiseAvoidanceDuration' not in cnf:
+                cnf['SupercruiseAvoidanceDuration'] = 60
+            # New SupercruiseAvoidance compass-based escape settings
+            if 'SupercruiseAvoidanceRequireBehindPip' not in cnf:
+                cnf['SupercruiseAvoidanceRequireBehindPip'] = False  # Default False: bottom-only success
+            if 'SupercruiseAvoidanceEscapeHeadingTimeoutSeconds' not in cnf:
+                cnf['SupercruiseAvoidanceEscapeHeadingTimeoutSeconds'] = 12.0
+            if 'SupercruiseAvoidanceMinPitchSeconds' not in cnf:
+                cnf['SupercruiseAvoidanceMinPitchSeconds'] = 1.5
+            if 'SupercruiseAvoidanceCooldownSeconds' not in cnf:
+                cnf['SupercruiseAvoidanceCooldownSeconds'] = 5.0
             self.config = cnf
             logger.debug("read AP json:"+str(cnf))
         else:
@@ -225,6 +250,8 @@ class EDAutopilot:
         self.system_map = EDSystemMap(self, self.scr, self.keys, cb, self.jn.ship_state()['odyssey'])
         self.stn_svcs_in_ship = EDStationServicesInShip(self, self.scr, self.keys, cb)
         self.nav_panel = EDNavigationPanel(self, self.scr, self.keys, cb)
+        self.sun_avoidance = SunAvoidance(self)
+        self.sc_avoidance = SupercruiseAvoidance(self)
 
         self.mesg_server = EDMesgServer(self, cb)
         self.mesg_server.actions_port = self.config['EDMesgActionsPort']
@@ -251,6 +278,12 @@ class EDAutopilot:
         self.refuel_cnt = 0
         self.current_ship_type = None
         self.gui_loaded = False
+        
+        # Occlusion avoidance cooldown (time.time() value when cooldown expires)
+        self._occlusion_cooldown_until = 0
+        
+        # Hysteresis: last time the solid target was confidently visible
+        self._last_target_visible_time = 0
 
         self.ap_ckb = cb
 
@@ -877,7 +910,8 @@ class EDAutopilot:
                 final_yaw_deg = degrees(math.acos(yaw_pct)) - 270  # X in deg (-90.0 to 90.0, 0.0 in the center)
 
         result = {'x': round(final_x_pct, 2), 'y': round(final_y_pct, 2), 'z': round(final_z_pct, 2),
-                  'roll': round(final_roll_deg, 2), 'pit': round(final_pit_deg, 2), 'yaw': round(final_yaw_deg, 2)}
+                  'roll': round(final_roll_deg, 2), 'pit': round(final_pit_deg, 2), 'yaw': round(final_yaw_deg, 2),
+                  'compass_conf': round(maxVal, 4), 'nav_conf': round(n_maxVal, 4)}
 
         if self.cv_view:
             #icompass_image_d = cv2.cvtColor(compass_image_gray, cv2.COLOR_GRAY2RGB)
@@ -905,13 +939,65 @@ class EDAutopilot:
 
     def is_destination_occluded(self, scr_reg) -> bool:
         """ Looks to see if the 'dashed' line of the target is present indicating the target
-        is occluded by the planet.
+        is occluded by the planet. Uses template matching as primary method, with a shape-based
+        dashed circle detector as fallback for low-contrast scenarios.
+        
+        HARD VETO: If the solid destination circle is visible (or was visible recently),
+        we return False immediately to prevent false positives.
+        
         @param scr_reg: The screen region to check.
         @return: True if target occluded (meets threshold), else False.
         """
-        dst_image, (minVal, maxVal, minLoc, maxLoc), match = scr_reg.match_template_in_region('target_occluded', 'target_occluded', inv_col=False)
+        import time as time_module
+        
+        # ============ HARD VETO CHECK (with hysteresis) ============
+        # First, check if the solid destination circle is visible
+        _, (_, target_val_p1, _, _), _ = scr_reg.match_template_in_region('target', 'target')
+        _, (_, target_val_x3, _, _), _ = scr_reg.match_template_in_region_x3('target', 'target')
+        target_val = max(target_val_p1, target_val_x3)
+        
+        if target_val >= scr_reg.target_thresh:
+            # Solid target is visible - update timestamp and VETO occlusion
+            self._last_target_visible_time = time_module.time()
+            logger.debug(f"Occlusion VETO: Solid target visible (conf={target_val:.3f}), returning NOT occluded")
+            return False
+        
+        # Sticky window: If we saw the target recently, still return False
+        # This prevents flickering around the threshold from triggering avoidance
+        sticky_window_seconds = 1.0
+        time_since_visible = time_module.time() - self._last_target_visible_time
+        if time_since_visible < sticky_window_seconds:
+            logger.debug(f"Occlusion VETO: Sticky window active ({time_since_visible:.2f}s < {sticky_window_seconds}s), returning NOT occluded")
+            return False
+        
+        # ============ OCCLUSION DETECTION ============
+        # Pass 1: Primary match (using pre-configured filter, e.g. equalize)
+        dst_image, (minVal, maxVal, minLoc, maxLoc), match = scr_reg.match_template_in_region('target_occluded', 'target_occluded')
+
+        # Pass 2: Secondary match (RGB/HSV split) for robustness
+        dst_image_x3, (minVal_x3, maxVal_x3, minLoc_x3, maxLoc_x3), match_x3 = scr_reg.match_template_in_region_x3('target_occluded', 'target_occluded')
+
+        best_val = max(maxVal, maxVal_x3)
 
         pt = maxLoc
+
+        # Shape-based fallback detection (only if template matching is inconclusive)
+        circle_found = False
+        circle_score = 0.0
+        circle_result = None
+        circle_info = None
+        if best_val < scr_reg.target_occluded_thresh:
+            # Template matching failed - try shape-based detection
+            circle_found, circle_score, circle_result, circle_debug = scr_reg.detect_dashed_circle(
+                'target_occluded',
+                ring_score_thresh=0.40,
+                min_gap_gain=0.1
+            )
+            circle_info = circle_debug
+            if circle_found:
+                logger.debug(f"Dashed circle detected via shape analysis (score={circle_score:.3f}, "
+                        f"cov={circle_info.get('coverage', 0):.2f}, runs={circle_info.get('runs', 0)}, "
+                        f"gap={circle_info.get('gap_gain', 0):.2f})")
 
         if self.cv_view:
             dst_image_d = cv2.cvtColor(dst_image, cv2.COLOR_GRAY2RGB)
@@ -922,22 +1008,42 @@ class EDAutopilot:
             height = scr_reg.templates.template['target_occluded']['height']
             try:
                 self.draw_match_rect(dst_image_d, pt, (pt[0]+width, pt[1]+height), (0, 0, 255), 2)
+                
+                # Draw detected circle if available
+                if circle_result is not None:
+                    cx, cy, r = circle_result
+                    color = (0, 255, 0) if circle_found else (0, 165, 255)
+                    cv2.circle(dst_image_d, (cx, cy), r, color, 2)
+                    cv2.circle(dst_image_d, (cx, cy), 3, color, -1)
+                
                 dim = (int(destination_width/2), int(destination_height/2))
 
                 img = cv2.resize(dst_image_d, dim, interpolation=cv2.INTER_AREA)
-                img = cv2.rectangle(img, (0, 0), (1000, 25), (0, 0, 0), -1)
-                cv2.putText(img, f'{maxVal:5.4f} > {scr_reg.target_occluded_thresh:5.2f}', (1, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
+                img = cv2.rectangle(img, (0, 0), (1000, 40), (0, 0, 0), -1)
+                cv2.putText(img, f'Templ: {maxVal:5.4f}/{maxVal_x3:5.4f} > {scr_reg.target_occluded_thresh:5.2f}', (1, 12), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1, cv2.LINE_AA)
+                circle_status = f'Circ: {circle_score:.2f} ' + (f'C:{circle_info.get("coverage",0):.2f} R:{circle_info.get("runs",0)}' if circle_info else 'N/A')
+                cv2.putText(img, circle_status, (1, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 255, 0) if circle_found else (128, 128, 128), 1, cv2.LINE_AA)
                 cv2.imshow('occluded', img)
                 cv2.moveWindow('occluded', self.cv_view_x, self.cv_view_y+650)
             except Exception as e:
                 print("exception in getdest: "+str(e))
             cv2.waitKey(30)
 
-        if maxVal > scr_reg.target_occluded_thresh:
-            logger.debug(f"Target is occluded ({maxVal:5.4f} > {scr_reg.target_occluded_thresh:5.2f})")
+        # Log significant misses to help with tuning
+        if best_val < scr_reg.target_occluded_thresh and best_val > 0.35 and not circle_found:
+            extra = ""
+            if circle_info:
+                extra = f", Cov={circle_info.get('coverage', 0):.2f}, Runs={circle_info.get('runs', 0)}"
+            logger.debug(f"Occlusion miss: Eq={maxVal:.4f}, X3={maxVal_x3:.4f} < {scr_reg.target_occluded_thresh}, Circle={circle_score:.3f}{extra}")
+
+        # Return True if EITHER method detects occlusion
+        if best_val > scr_reg.target_occluded_thresh:
+            logger.debug(f"Target is occluded via template (Best={best_val:5.4f} > {scr_reg.target_occluded_thresh:5.2f})")
+            return True
+        elif circle_found:
+            logger.debug(f"Target is occluded via circle detection (score={circle_score:.3f})")
             return True
         else:
-            #logger.debug(f"Target is not occluded ({maxVal:5.4f} < {scr_reg.target_occluded_thresh:5.2f})")
             return False
 
     def get_destination_offset(self, scr_reg):
@@ -985,6 +1091,31 @@ class EDAutopilot:
             result = {'x': final_x, 'y': final_y}
 
         return result
+
+    def get_occluded_destination_offset(self, scr_reg):
+        """ Determine offset from the dashed circle (occluded target) to the center of the region.
+        Returns {x, y, r, score} if detected, else None.
+        Matches the coordinate convention of get_destination_offset.
+        """
+        region_name = 'target_occluded'
+        found, score, circle, info = scr_reg.detect_dashed_circle(region_name)
+        
+        if found and circle is not None:
+            cx, cy, r = circle
+            width = scr_reg.reg[region_name]['width']
+            height = scr_reg.reg[region_name]['height']
+            
+            # Compute offsets (Solid target logic uses some calibration constants, 
+            # here we use geometric center which should be the true center)
+            # x = cx - (region_width / 2)
+            # y = (region_height / 2) - cy (Y positive is UP in this convention, usually)
+            
+            x = cx - (width / 2.0)
+            y = (height / 2.0) - cy
+            
+            return {'x': x, 'y': y, 'r': r, 'score': score}
+            
+        return None
 
     def sc_disengage_label_up(self, scr_reg) -> bool:
         """ look for messages like "PRESS [J] TO DISENGAGE" or "SUPERCRUISE OVERCHARGE ACTIVE",
@@ -1236,49 +1367,41 @@ class EDAutopilot:
     def is_sun_dead_ahead(self, scr_reg):
         return scr_reg.sun_percent(scr_reg.screen) > 5
 
+    def is_inter_system_route_active(self) -> bool:
+        """Check if an inter-system FSD route is currently active.
+        
+        Returns True when the journal indicates an FSD route target exists,
+        meaning we are traveling between star systems rather than just
+        flying to a planet/station within the current system.
+        """
+        ship = self.jn.ship_state()
+        return ship.get('target') is not None
+
     # use to orient the ship to not be pointing right at the Sun
     # Checks brightness in the region in front of us, if brightness exceeds a threshold
     # then will pitch up until below threshold.
     #
-    def sun_avoid(self, scr_reg):
-        logger.debug('align= avoid sun')
-
+    def sun_avoid(self, scr_reg) -> bool:
+        """Use the SunAvoidance script to handle sun obstruction.
+        
+        This delegates to the SunAvoidance class which will:
+        1. Detect if sun is blocking the path
+        2. Pitch away from the sun
+        3. Continue flying away for SunAvoidanceDuration seconds
+        4. Return control for target alignment
+        
+        Returns:
+            True if sun avoidance was executed, False if skipped.
+        """
+        # Gate: only run SunAvoidance during inter-system route travel
+        if not self.is_inter_system_route_active():
+            logger.debug('sun_avoid: skipping - no inter-system route active (in-system SC Assist)')
+            return False
+        
+        logger.debug('sun_avoid: delegating to SunAvoidance script')
         sleep(0.5)
-
-        # close to core the 'sky' is very bright with close stars, if we are pitch due to a non-scoopable star
-        #  which is dull red, the star field is 'brighter' than the sun, so our sun avoidance could pitch up
-        #  endlessly. So we will have a fail_safe_timeout to kick us out of pitch up if we've pitch past 110 degrees, but
-        #  we'll add 3 more second for pad in case the user has a higher pitch rate than the vehicle can do
-        fail_safe_timeout = (120/self.pitchrate)+3
-        starttime = time.time()
-
-        # if sun in front of us, then keep pitching up until it is below us
-        while self.is_sun_dead_ahead(scr_reg):
-            self.keys.send('PitchUpButton', state=1)
-
-            # check if we are being interdicted
-            interdicted = self.interdiction_check()
-            if interdicted:
-                # Continue journey after interdiction
-                self.keys.send('SetSpeedZero')
-
-            # if we are pitching more than N seconds break, may be in high density area star area (close to core)
-            if ((time.time()-starttime) > fail_safe_timeout):
-                logger.debug('sun avoid failsafe timeout')
-                print("sun avoid failsafe timeout")
-                break
-
-        sleep(0.35)                 # up slightly so not to overheat when scooping
-        # Some ships heat up too much and need pitch up a little further
-        if self.sunpitchuptime > 0.0:
-            sleep(self.sunpitchuptime)
-        self.keys.send('PitchUpButton', state=0)
-
-        # Some ships run cool so need to pitch down a little
-        if self.sunpitchuptime < 0.0:
-            self.keys.send('PitchDownButton', state=1)
-            sleep(-1.0 * self.sunpitchuptime)
-            self.keys.send('PitchDownButton', state=0)
+        self.sun_avoidance.execute(scr_reg)
+        return True
 
     def nav_align(self, scr_reg):
         """ Use the compass to find the nav point position.  Will then perform rotation and pitching
@@ -1436,26 +1559,54 @@ class EDAutopilot:
     def sc_target_align(self, scr_reg) -> ScTargetAlignReturn:
         """ Stays tight on the target, monitors for disengage and obscured.
         If target could not be found, return false.
+        
+        When occlusion is detected, we fully commit to the avoidance maneuver
+        (no more "steer via occluded destination" fallback which caused weak/stop-start steering).
+        
         @param scr_reg: The screen region class.
         @return: A string detailing the reason for the method return. Current return options:
             'lost': Lost target
             'found': Target found
             'disengage': Disengage text found
         """
+        import time as time_module  # Local import to avoid conflict with sleep
 
         close = 6
         off = None
 
         hold_pitch = 0.100
         hold_yaw = 0.100
-        for i in range(5):
+        
+        # Get cooldown duration from config
+        cooldown_seconds = self.config.get('SupercruiseAvoidanceCooldownSeconds', 5.0)
+        
+        # Extended acquisition loop to handle fading targets
+        for i in range(15):
             new = self.get_destination_offset(scr_reg)
             if new:
                 off = new
                 break
-            if self.is_destination_occluded(scr_reg):
-                self.occluded_reposition(scr_reg)
-                self.ap_ckb('log+vce', 'Target Align')
+
+            # Check for occlusion and trigger avoidance (respecting cooldown)
+            # Note: We no longer try to "steer via occluded destination offset"
+            # Instead, we fully commit to the avoidance maneuver when occlusion is detected
+            if time_module.time() >= self._occlusion_cooldown_until:
+                if self.is_destination_occluded(scr_reg):
+                    logger.info("Target occluded, initiating avoidance maneuver")
+                    self.occluded_reposition(scr_reg)
+                    self.keys.send('SetSpeed50')  # Restore SC-safe throttle after avoidance
+                    # Set cooldown to prevent immediate re-trigger
+                    self._occlusion_cooldown_until = time_module.time() + cooldown_seconds
+                    logger.debug(f"Occlusion cooldown set for {cooldown_seconds}s")
+                    self.ap_ckb('log+vce', 'Target Align')
+                    # Continue loop to re-acquire target
+
+            # If we still haven't found it by iteration 10, and we have a compass destination,
+            # try to re-align blindly as we might be just off-axis or facing the wrong way
+            if i == 10 and self.have_destination(scr_reg):
+                 logger.info("Target not visual, but destination selected. Retrying nav_align...")
+                 self.nav_align(scr_reg)
+            
             sleep(0.1)
 
         # Could not be found, return
@@ -1465,6 +1616,8 @@ class EDAutopilot:
             return ScTargetAlignReturn.Lost
 
         #logger.debug("sc_target_align x: "+str(off['x'])+" y:"+str(off['y']))
+
+        consecutive_misses = 0
 
         while (abs(off['x']) > close) or \
                 (abs(off['y']) > close):
@@ -1492,10 +1645,19 @@ class EDAutopilot:
 
             sleep(.02)  # time for image to catch up
 
-            # this checks if suddenly the target show up behind the planet
-            if self.is_destination_occluded(scr_reg):
-                self.occluded_reposition(scr_reg)
-                self.ap_ckb('log+vce', 'Target Align')
+            # Only check for occlusion if we have lost the target for a few frames
+            # This prevents flickering/false positives when the target is actually visible
+            # Also respect the cooldown to prevent immediate re-trigger
+            if consecutive_misses > 2 and time_module.time() >= self._occlusion_cooldown_until:
+                if self.is_destination_occluded(scr_reg):
+                    logger.info("Target occluded during alignment, initiating avoidance maneuver")
+                    self.occluded_reposition(scr_reg)
+                    self.keys.send('SetSpeed50')  # Restore SC-safe throttle after avoidance
+                    # Set cooldown to prevent immediate re-trigger
+                    self._occlusion_cooldown_until = time_module.time() + cooldown_seconds
+                    logger.debug(f"Occlusion cooldown set for {cooldown_seconds}s")
+                    self.ap_ckb('log+vce', 'Target Align')
+                    consecutive_misses = 0  # Reset after handling
 
             # check for SC Disengage
             if self.sc_disengage_label_up(scr_reg):
@@ -1506,12 +1668,21 @@ class EDAutopilot:
                     return ScTargetAlignReturn.Disengage
 
             new = self.get_destination_offset(scr_reg)
+            
+            # Note: We no longer try to steer via get_occluded_destination_offset()
+            # If solid target is lost, we increment consecutive_misses and eventually trigger avoidance
+            # This prevents the weak/stop-start steering that occurred with dashed circle tracking
+
             if new:
                 off = new
+                consecutive_misses = 0
+            else:
+                # Target possibly lost or momentarily obscured
+                consecutive_misses += 1
 
-            # Check if target is outside the target region (behind us) and break loop
-            if new is None:
-                logger.debug("sc_target_align lost target")
+            # Check if target is outside the target region (behind us) and break loop if completely lost
+            if new is None and consecutive_misses > 10:
+                logger.debug("sc_target_align lost target for too long")
                 self.ap_ckb('log', 'Target lost, attempting re-alignment.')
                 return ScTargetAlignReturn.Lost
 
@@ -1527,25 +1698,17 @@ class EDAutopilot:
         return ScTargetAlignReturn.Found
 
     def occluded_reposition(self, scr_reg):
-        """ Reposition is use when the target is occluded by a planet or other.
-        We pitch 90 deg down for a bit, then up 90, this should make the target underneath us
-        this is important because when we do nav_align() if it does not see the Nav Point
-        in the compass (because it is a hollow circle), then it will pitch down, this will
-        bring the target into view quickly. """
-        self.ap_ckb('log+vce', 'Target occluded, repositioning.')
-        self.keys.send('SetSpeed50')
-        sleep(5)
-        self.pitchDown(90)
-
-        # Speed away
-        self.keys.send('SetSpeed100')
-        sleep(15)
-
-        self.keys.send('SetSpeed50')
-        sleep(5)
-        self.pitchUp(90)
-        self.nav_align(scr_reg)
-        self.keys.send('SetSpeed50')
+        """Use the SupercruiseAvoidance script to handle planetary/station obstruction.
+        
+        This delegates to the SupercruiseAvoidance class which will:
+        1. Acquire escape heading using compass (pip at bottom AND behind)
+        2. Fly away for guaranteed duration (no early exit based on occlusion)
+        3. Pitch back and re-align to target
+        
+        If compass is unreliable, falls back to 180° yaw + pitch maneuver.
+        """
+        logger.debug('occluded_reposition: delegating to SupercruiseAvoidance script')
+        self.sc_avoidance.execute(scr_reg)
 
     def honk(self):
         # Do the Discovery Scan (Honk)

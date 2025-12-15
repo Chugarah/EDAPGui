@@ -111,7 +111,7 @@ class Screen_Regions:
         # The rect is [L, T, R, B] top left x, y, and bottom right x, y in fraction of screen resolution
         self.reg['compass']   = {'rect': [0.33, 0.65, 0.46, 1.0], 'width': 1, 'height': 1, 'filterCB': self.equalize,                                'filter': None}
         self.reg['target']    = {'rect': [0.33, 0.27, 0.66, 0.70], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.orange_2_color_range}   # also called destination
-        self.reg['target_occluded']    = {'rect': [0.33, 0.27, 0.66, 0.70], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.target_occluded_range} 
+        self.reg['target_occluded']    = {'rect': [0.33, 0.27, 0.66, 0.70], 'width': 1, 'height': 1, 'filterCB': self.equalize, 'filter': None} 
         self.reg['sun']       = {'rect': [0.30, 0.30, 0.70, 0.68], 'width': 1, 'height': 1, 'filterCB': self.filter_sun, 'filter': None}
         self.reg['disengage'] = {'rect': [0.42, 0.65, 0.60, 0.80], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.blue_sco_color_range}
         self.reg['sco']       = {'rect': [0.42, 0.65, 0.60, 0.80], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.blue_sco_color_range}
@@ -148,7 +148,21 @@ class Screen_Regions:
         """ Attempt to match the given template in the given region which is filtered using the region filter.
         Returns the filtered image, detail of match and the match mask. """
         img_region = self.capture_region_filtered(self.screen, region_name, inv_col)    # which would call, reg.capture_region('compass') and apply defined filter
-        match = cv2.matchTemplate(img_region, self.templates.template[templ_name]['image'], cv2.TM_CCOEFF_NORMED)
+        templ_img = self.templates.template[templ_name]['image']
+        
+        # Get dimensions (handle both 2D grayscale and 3D color images)
+        img_h, img_w = img_region.shape[:2]
+        templ_h, templ_w = templ_img.shape[:2]
+        
+        # Safety guard: check if region is large enough for template matching
+        if img_h < templ_h or img_w < templ_w:
+            print(f"ERROR match_template_in_region: Region '{region_name}' ({img_w}x{img_h}) is smaller than template '{templ_name}' ({templ_w}x{templ_h}).")
+            print(f"  Screen: {self.screen.screen_width}x{self.screen.screen_height}, RegDef: {self.reg[region_name]['rect']}")
+            # Return a zeroed match result to prevent crash
+            match = np.zeros((1, 1), dtype=np.float32)
+            return img_region, (0.0, 0.0, (0, 0), (0, 0)), match
+
+        match = cv2.matchTemplate(img_region, templ_img, cv2.TM_CCOEFF_NORMED)
         (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(match)
         return img_region, (minVal, maxVal, minLoc, maxLoc), match
 
@@ -223,6 +237,227 @@ class Screen_Regions:
             return image, (minVal_s, maxVal_s, minLoc_s, maxLoc_s), match_s
         # H must be the best match
         return image, (minVal_h, maxVal_h, minLoc_h, maxLoc_h), match_h
+
+    def detect_dashed_circle(self, region_name: str, expected_radius_px: float = None,
+                               radius_tolerance: float = 0.3, ring_score_thresh: float = 0.35,
+                               min_gap_gain: float = 0.1,
+                               max_run_length: int = 12,
+                               debug_image: np.ndarray = None) -> tuple:
+        """
+        Detect a dashed/dotted circle (occluded target reticle) using shape-based analysis.
+        This is illumination-invariant and works when template matching fails on bright backgrounds.
+        
+        @param region_name: The screen region to analyze (e.g. 'target_occluded').
+        @param expected_radius_px: Expected radius in pixels. If None, derived from template size.
+        @param radius_tolerance: Fraction tolerance for radius matching (0.3 = ±30%).
+        @param ring_score_thresh: Minimum fraction of sampled circumference points on edges.
+        @param min_gap_gain: Minimum (ring_support - coverage_raw) to consider it dashed.
+        @param max_run_length: Reject if the longest contiguous 'on' segment exceeds this (indicates solid arc).
+        @param debug_image: Optional BGR image for drawing debug info (modified in-place).
+        @return: (found: bool, score: float, circle: (x, y, r) or None, debug_info: dict)
+        """
+        # Capture the region (BGR)
+        img_bgr = self.screen.get_screen_region(self.reg[region_name]['rect'], rgb=False)
+        
+        # Derive expected radius from template if not provided
+        if expected_radius_px is None:
+            templ_w = self.templates.template.get('target_occluded', {}).get('width', 100)
+            templ_h = self.templates.template.get('target_occluded', {}).get('height', 100)
+            expected_radius_px = (templ_w + templ_h) / 4.0  # Average of width/height / 2
+        
+        # Preprocessing pipeline for illumination invariance
+        gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+        
+        # CLAHE for local contrast enhancement
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(gray)
+        
+        # High-pass filter (unsharp mask) to suppress smooth planet lighting
+        blurred = cv2.GaussianBlur(enhanced, (21, 21), 0)
+        high_pass = cv2.subtract(enhanced, blurred)
+        high_pass = cv2.add(high_pass, 128)  # Shift to visible range
+        
+        # Canny edge detection
+        edges = cv2.Canny(high_pass, 20, 80)
+        
+        # Morphological close to connect dash segments
+        # Slightly larger kernel to bridge gaps in dashed circle
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+        edges_closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+        
+        # Hough Circle detection with constrained radius
+        min_radius = int(expected_radius_px * (1.0 - radius_tolerance))
+        max_radius = int(expected_radius_px * (1.0 + radius_tolerance))
+        min_radius = max(10, min_radius)  # Safety floor
+        
+        img_h, img_w = gray.shape[:2]
+        min_dist = int(min(img_w, img_h) * 0.3)  # Circles must be reasonably separated
+        
+        circles = cv2.HoughCircles(
+            edges_closed,
+            cv2.HOUGH_GRADIENT,
+            dp=1.2,
+            minDist=min_dist,
+            param1=50,
+            param2=15,
+            minRadius=min_radius,
+            maxRadius=max_radius
+        )
+        
+        best_circle = None
+        best_score = 0.0
+        debug_info = {
+            'expected_radius': expected_radius_px,
+            'radius_range': (min_radius, max_radius),
+            'candidates': 0,
+            'best_score': 0.0
+        }
+        
+        if circles is not None:
+            circles = np.round(circles[0, :]).astype(int)
+            debug_info['candidates'] = len(circles)
+            
+            for (cx, cy, r) in circles:
+                # Ring support score: sample points around circumference and check edge hits
+                num_samples = 72  # Every 5 degrees
+                edge_hits = 0
+                
+                # Dashiness metrics
+                raw_hits = 0
+                hit_sequence = []
+                
+                for i in range(num_samples):
+                    angle = 2 * np.pi * i / num_samples
+                    px = int(cx + r * np.cos(angle))
+                    py = int(cy + r * np.sin(angle))
+                    
+                    # Check bounds
+                    if 0 <= px < img_w and 0 <= py < img_h:
+                        # Use a tighter window to avoid 'smearing' gaps
+                        window_size = 1
+                        x_min = max(0, px - window_size)
+                        x_max = min(img_w, px + window_size + 1)
+                        y_min = max(0, py - window_size)
+                        y_max = min(img_h, py + window_size + 1)
+                        
+                        # 1. Ring Support (closed edges) - existing metric
+                        window_closed = edges_closed[y_min:y_max, x_min:x_max]
+                        if np.any(window_closed > 0):
+                            edge_hits += 1
+
+                        # 2. Dashiness (raw edges) - new metric
+                        window_raw = edges[y_min:y_max, x_min:x_max]
+                        is_hit = False
+                        if np.any(window_raw > 0):
+                            raw_hits += 1
+                            is_hit = True
+                        hit_sequence.append(1 if is_hit else 0)
+                    else:
+                        hit_sequence.append(0)
+                
+                # Compute metrics
+                ring_support = edge_hits / num_samples
+                coverage_raw = raw_hits / num_samples
+                gap_gain = ring_support - coverage_raw
+                
+                # Analyze hit sequence for runs
+                transitions = 0
+                longest_on = 0
+                current_on = 0
+                longest_off = 0
+                current_off = 0
+                
+                # Double the sequence to handle wrap-around correctly for run counting
+                seq_doubled = hit_sequence + hit_sequence
+                
+                # Just counting transitions first
+                if len(hit_sequence) > 0:
+                    for i in range(len(hit_sequence)):
+                        curr_val = hit_sequence[i]
+                        next_val = hit_sequence[(i + 1) % len(hit_sequence)]
+                        if curr_val != next_val:
+                            transitions += 1
+                
+                # Scan for max runs in the doubled sequence (truncated to 1.5x length to be safe)
+                # But simpler: just iterate once with state
+                if len(hit_sequence) > 0:
+                     # Find a starting 0 to properly count runs from a gap, or just use the doubled max method
+                     temp_max_on = 0
+                     temp_curr_on = 0
+                     for val in seq_doubled:
+                         if val == 1:
+                             temp_curr_on += 1
+                         else:
+                             if temp_curr_on > temp_max_on:
+                                 temp_max_on = temp_curr_on
+                             temp_curr_on = 0
+                     longest_on = temp_max_on
+                     # Cap at sample size (if full ring is ON)
+                     if longest_on > num_samples: longest_on = num_samples
+
+                # Run count is roughly transitions / 2
+                run_count = transitions // 2
+
+                # Acceptance Criteria
+                # 1. Must be a good circle shape (ring_support checking edges_closed)
+                # 2. Must NOT be too solid (coverage_raw check on raw edges)
+                # 3. Must have enough segments (run_count)
+                # 4. Must have meaningful gap gain (edges_closed filled gaps that edges didn't have)
+                # 5. Longest contiguous arc must not be too long (solid arc)
+                
+                coverage_max = 0.85  # Reject if > 85% of ring is raw edges (solid ring)
+                min_runs = 6         # At least 6 dashes
+                min_gap_gain_local = 0.01 # Override argument for now
+                
+                # Center offset check (Target should be roughly centered in the region)
+                # Calculate normalized distance from center (0.0 = center, 1.0 = corner)
+                dx = cx - (img_w / 2)
+                dy = cy - (img_h / 2)
+                dist_norm = np.sqrt(dx*dx + dy*dy) / max(img_w, img_h)
+                max_center_offset = 0.20  # Must be within 20% of center
+                
+                passes_dash_check = (
+                    (coverage_raw <= coverage_max) and 
+                    (run_count >= min_runs) and
+                    (gap_gain >= min_gap_gain_local) and
+                    (longest_on <= max_run_length) and
+                    (dist_norm <= max_center_offset)
+                )
+                
+                current_stats = {
+                    'coverage': coverage_raw,
+                    'transitions': transitions,
+                    'runs': run_count,
+                    'gap_gain': gap_gain,
+                    'longest_on': longest_on,
+                    'ring_support': ring_support,
+                    'passes': passes_dash_check
+                }
+                
+                # Combine score: We prefer highest ring_support, BUT only if it passes dash checks.
+                if passes_dash_check:
+                    if ring_support > best_score:
+                        best_score = ring_support
+                        best_circle = (cx, cy, r)
+                        debug_info.update(current_stats)
+                else:
+                    # Track best rejected for debugging
+                    if ring_support > debug_info.get('rejected_score', -1.0):
+                        debug_info['rejected_score'] = ring_support
+                        debug_info.update(current_stats)
+                        debug_info['rejected'] = True
+        
+        debug_info['best_score'] = best_score
+        found = best_score >= ring_score_thresh
+        
+        # Draw debug visualization if requested
+        if debug_image is not None and best_circle is not None:
+            cx, cy, r = best_circle
+            color = (0, 255, 0) if found else (0, 165, 255)  # Green if found, orange if not
+            cv2.circle(debug_image, (cx, cy), r, color, 2)
+            cv2.circle(debug_image, (cx, cy), 3, color, -1)  # Center dot
+        
+        return found, best_score, best_circle, debug_info
 
     def equalize(self, image=None, noOp=None):
         # Load the image in greyscale
