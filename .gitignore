@@ -17,3 +17,5 @@
 .idea/
 EDMesg/__pycache__/
 simple_localization/__pycache__/
+.cursor/plans
+/completed-tasks
