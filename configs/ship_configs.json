@@ -1,18 +1,90 @@
 {
     "Ship_Configs": {
         "panthermkii": {
-            "compass_scale": 0.771,
+            "compass_scale": 1.0175,
             "PitchRate": 16.0,
             "RollRate": 25.0,
             "YawRate": 10.0,
-            "SunPitchUp+Time": 2.0
+            "SunPitchUp+Time": 2.0,
+            "PitchFactor": 12.0,
+            "RollFactor": 20.0,
+            "YawFactor": 12.0,
+            "Speed50": {
+                "RollRate": {
+                    "50": 24.39,
+                    "84": 21.19,
+                    "167": 24.01,
+                    "327": 22.48,
+                    "450": 25.0
+                },
+                "PitchRate": {
+                    "6": 4.29,
+                    "10": 6.04,
+                    "20": 8.88,
+                    "41": 11.88,
+                    "83": 16.0,
+                    "300": 16.0
+                },
+                "YawRate": {
+                    "5": 3.3,
+                    "10": 5.54,
+                    "20": 6.87,
+                    "40": 9.33,
+                    "82": 10.0,
+                    "163": 10.0,
+                    "300": 10.0
+                }
+            },
+            "SCSpeed50": {
+                "PitchRate": {},
+                "YawRate": {},
+                "RollRate": {}
+            },
+            "SCSpeed0": {
+                "PitchRate": {}
+            }
         },
         "mandalay": {
-            "compass_scale": 0.977,
+            "compass_scale": 0.88,
             "PitchRate": 40.0,
             "RollRate": 120.0,
             "YawRate": 24.0,
-            "SunPitchUp+Time": 1.0
+            "SunPitchUp+Time": 1.0,
+            "Speed50": {
+                "RollRate": {
+                    "56": 37.79,
+                    "112": 56.03,
+                    "168": 64.07,
+                    "352": 81.32,
+                    "450": 120.0
+                },
+                "PitchRate": {
+                    "5": 5.55,
+                    "11": 9.77,
+                    "21": 12.95,
+                    "48": 21.81,
+                    "95": 27.8,
+                    "160": 32.9,
+                    "300": 40.0
+                },
+                "YawRate": {
+                    "5": 4.79,
+                    "12": 7.24,
+                    "22": 10.5,
+                    "42": 13.82,
+                    "88": 18.75,
+                    "167": 24.0,
+                    "300": 24.0
+                }
+            },
+            "PitchFactor": 12.0,
+            "RollFactor": 20.0,
+            "YawFactor": 12.0,
+            "SCSpeed50": {
+                "RollRate": {},
+                "PitchRate": {},
+                "YawRate": {}
+            }
         }
     }
 }

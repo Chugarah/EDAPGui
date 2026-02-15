@@ -1,0 +1,83 @@
+{
+    "EDCodex.full_panel": {
+        "rect": [
+            0.173,
+            0.057,
+            0.793,
+            0.946
+        ],
+        "text": "1. Open the Codex from right hand cockpit panel.\n2. Draw a rectangle from the top left corner of the codex 'book' to the end \nof the line above the exit button at the bottom right."
+    },
+    "EDInternalStatusPanel.panel_bounds1": {
+        "rect": [
+            0.362,
+            0.216,
+            0.793,
+            0.847
+        ],
+        "text": "1. Open Internal Status Panel (right hand panel).\n2. Draw a rectangle from the top left corner of the nav panel to the bottom right corner."
+    },
+    "EDInternalStatusPanel.panel_bounds2": {
+        "rect": [
+            0.364,
+            0.196,
+            0.808,
+            0.846
+        ],
+        "text": "1. Open Internal Status Panel (right hand panel).\n2. Draw a rectangle from the bottom left corner of the nav panel to the top right corner."
+    },
+    "EDStationServicesInShip.station_services": {
+        "rect": [
+            0.189,
+            0.069,
+            0.813,
+            0.923
+        ],
+        "text": "1. Open Station Service.\n2. Draw a rectangle from the top left of the left panel box to the bottom right of the right panel box."
+    },
+    "EDStationServicesInShip.commodities_market": {
+        "rect": [
+            0.1653,
+            0.057,
+            0.8008,
+            0.946
+        ],
+        "text": "This is calculated automatically from the Codex screen values. Do not change."
+    },
+    "EDGalaxyMap.full_panel": {
+        "rect": [
+            0.1575,
+            0.0214,
+            0.8085,
+            0.9816
+        ],
+        "text": "This is calculated automatically from the Codex screen values. Do not change."
+    },
+    "EDSystemMap.full_panel": {
+        "rect": [
+            0.1575,
+            0.0214,
+            0.8085,
+            0.9816
+        ],
+        "text": "This is calculated automatically from the Codex screen values. Do not change."
+    },
+    "EDNavigationPanel.panel_bounds1": {
+        "rect": [
+            0.22,
+            0.224,
+            0.662,
+            0.86
+        ],
+        "text": "1. Open Navigation Panel.\n2. Draw a rectangle from the top left corner of the nav panel to the bottom right corner."
+    },
+    "EDNavigationPanel.panel_bounds2": {
+        "rect": [
+            0.185,
+            0.203,
+            0.67,
+            0.874
+        ],
+        "text": "1. Open Navigation Panel.\n2. Draw a rectangle from the bottom left corner of the nav panel to the top right corner."
+    }
+}
