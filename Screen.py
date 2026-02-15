@@ -1,5 +1,7 @@
 from __future__ import annotations
 import typing
+from copy import copy
+
 import cv2
 import win32con
 import win32gui
@@ -8,7 +10,7 @@ import mss
 import json
 
 from EDlogger import logger
-
+from Screen_Regions import Quad
 
 """
 File:Screen.py    
@@ -50,51 +52,93 @@ def set_focus_elite_window():
             pass
 
 
+def crop_image_by_pct(image, quad: Quad):
+    """ Crop an image using a percentage values (0.0 - 1.0).
+    Rect is an array of crop % [0.10, 0.20, 0.90, 0.95] = [Left, Top, Right, Bottom]
+    Returns the cropped image. """
+    # Existing size
+    h, w, ch = image.shape
+    # Make a local copy
+    q = copy(quad)
+    # Scale from percent to pixels
+    q.scale_from_origin(w, h)
+    # Crop image
+    cropped = crop_image_pix(image, q)
+    return cropped
+
+
+def crop_image_pix(image, quad: Quad):
+    """ Crop an image using a pixel values.
+    Rect is an array of pixel values [100, 200, 1800, 1600] = [X0, Y0, X1, Y1] = [L, T, R, B]
+    Returns the cropped image."""
+    cropped = image[int(quad.get_top()):int(quad.get_bottom()),
+                    int(quad.get_left()):int(quad.get_right())]  # i.e. [y:y+h, x:x+w]
+    return cropped
+
+
 class Screen:
     def __init__(self, cb):
         self.ap_ckb = cb
         self.mss = mss.mss()
         self.using_screen = True  # True to use screen, false to use an image. Set screen_image to the image
         self._screen_image = None  # Screen image captured from screen, or loaded by user for testing.
-        self.window_offset_x = 0
-        self.window_offset_y = 0
+        self.screen_width = 0
+        self.screen_height = 0
+        self.screen_left = 0
+        self.screen_top = 0
+        self.monitor_number = 0
+        self.aspect_ratio = 0
+        self.mon = None
 
         # Find ED window position to determine which monitor it is on
         ed_rect = self.get_elite_window_rect()
         if ed_rect is None:
-            self.ap_ckb('log', f"ERROR: Could not find window {elite_dangerous_window}.")
-            logger.error(f'Could not find window {elite_dangerous_window}.')
+            msg = f"Could not find window '{elite_dangerous_window}'. Once Elite Dangerous is running, restart EDAP."
+            self.ap_ckb('log', f"ERROR: {msg}")
+            logger.error(msg)
         else:
             logger.debug(f'Found Elite Dangerous window position: {ed_rect}')
-            # If we found the window, we can set the screen size directly from the window rect
-            # This supports Windowed mode where the window might not match a monitor exactly
-            self.screen_width = ed_rect[2] - ed_rect[0]
-            self.screen_height = ed_rect[3] - ed_rect[1]
-            self.window_offset_x = ed_rect[0]
-            self.window_offset_y = ed_rect[1]
-            
-            # We still need to find which monitor contains the window for mss to work efficiently
-            # or we can just use the coordinates with mss if we handle multi-monitor offsets correctly.
-            # mss handles virtual screen coordinates.
-            
-            # Let's try to find the monitor that contains the center of the window
-            center_x = ed_rect[0] + self.screen_width // 2
-            center_y = ed_rect[1] + self.screen_height // 2
-            
-            self.monitor_number = 1 # Default to 1
-            mon_num = 0
-            for item in self.mss.monitors:
-                if mon_num > 0:
-                    if (item['left'] <= center_x < item['left'] + item['width'] and
-                        item['top'] <= center_y < item['top'] + item['height']):
+
+        # Examine all monitors to determine match with ED
+        self.mons = self.mss.monitors
+        mon_num = 0
+        default = True
+        for item in self.mons:
+            logger.debug(f'Found monitor {mon_num} with details: {item}')
+            if mon_num > 0:  # ignore monitor 0 as it is the complete desktop (dims of all monitors)
+                if ed_rect is not None:
+                    if item['left'] == ed_rect[0] and item['top'] == ed_rect[1]:
+                        # Get information of monitor
                         self.monitor_number = mon_num
-                        self.mon = item
+                        self.mon = self.mss.monitors[self.monitor_number]
+                        self.screen_width = item['width']
+                        self.screen_height = item['height']
+                        self.aspect_ratio = self.screen_width / self.screen_height
+                        self.screen_left = item['left']
+                        self.screen_top = item['top']
                         logger.debug(f'Elite Dangerous is on monitor {mon_num}.')
+                        default = False
                         break
-                mon_num += 1
-            else:
-                 # Fallback if not found (e.g. spanning monitors?), just use the first one or rely on offsets
-                 self.mon = self.mss.monitors[1] if len(self.mss.monitors) > 1 else self.mss.monitors[0]
+
+            # Store the first monitor incase we need it as default
+            if mon_num == 1:
+                self.monitor_number = mon_num
+                self.mon = self.mss.monitors[self.monitor_number]
+                self.screen_width = item['width']
+                self.screen_height = item['height']
+                self.aspect_ratio = self.screen_width / self.screen_height
+                self.screen_left = item['left']
+                self.screen_top = item['top']
+
+            # Next monitor
+            mon_num = mon_num + 1
+
+        # Check if ED was found on a monitor, or if we are using the default monitor
+        if default:
+            msg = (f"Elite Dangerous could not be located on any monitor. Check Elite Dangerous is not minimized and "
+                   f"is visible on screen.")
+            self.ap_ckb('log', f"ERROR: {msg}")
+            logger.error(msg)
 
         # Add new screen resolutions here with tested scale factors
         # this table will be default, overwritten when loading resolution.json file
@@ -140,7 +184,8 @@ class Screen:
         # if self.scales['Calibrated'][1] != -1.0:
         #     self.scaleY = self.scales['Calibrated'][1]
         
-        logger.debug('screen size: '+str(self.screen_width)+" "+str(self.screen_height))
+        logger.debug('screen size: w='+str(self.screen_width)+" h="+str(self.screen_height))
+        logger.debug('screen position: x='+str(self.screen_left)+" y="+str(self.screen_top))
         logger.debug('Default scale X, Y: '+str(self.scaleX)+", "+str(self.scaleY))
 
     @staticmethod
@@ -200,12 +245,12 @@ class Screen:
         return image
 
     def get_screen(self, x_left, y_top, x_right, y_bot, rgb=True):    # if absolute need to scale??
-        # Adjust coordinates by window offset
+        """ Get screen from co-ords in pixels."""
         monitor = {
-            "top": self.window_offset_y + y_top,
-            "left": self.window_offset_x + x_left,
-            "width": x_right - x_left,
-            "height": y_bot - y_top,
+            "top": self.mon["top"] + int(y_top),
+            "left": self.mon["left"] + int(x_left),
+            "width": int(x_right - x_left),
+            "height": int(y_bot - y_top),
             "mon": self.monitor_number,
         }
         image = array(self.mss.grab(monitor))
@@ -226,8 +271,9 @@ class Screen:
         else:
             if self._screen_image is None:
                 return None
-       
-            image = self.crop_image_by_pct(self._screen_image, rect)
+
+            q = Quad.from_rect(rect)
+            image = crop_image_by_pct(self._screen_image, q)
             return image
 
     def screen_rect_to_abs(self, rect):
@@ -238,6 +284,15 @@ class Screen:
         abs_rect = [int(rect[0] * self.screen_width), int(rect[1] * self.screen_height),
                     int(rect[2] * self.screen_width), int(rect[3] * self.screen_height)]
         return abs_rect
+
+    def screen_region_pct_to_pix(self, quad: Quad) -> Quad:
+        """ Converts and array of real percentage screen values to int absolutes.
+        @param quad: A rect array ([L, T, R, B]) in percent (0.0 - 1.0)
+        @return: A rect array ([L, T, R, B]) in pixels
+        """
+        q = copy(quad)
+        q.scale_from_origin(self.screen_width, self.screen_height)
+        return q
 
     def get_screen_full(self):
         """ Grabs a full screenshot and returns the image.
@@ -250,30 +305,6 @@ class Screen:
                 return None
 
             return self._screen_image
-
-    def crop_image_by_pct(self, image, rect):
-        """ Crop an image using a percentage values (0.0 - 1.0).
-        Rect is an array of crop % [0.10, 0.20, 0.90, 0.95] = [Left, Top, Right, Bottom]
-        Returns the cropped image. """
-        # Existing size
-        h, w, ch = image.shape
-
-        # Crop to leave only the selected rectangle
-        x0 = int(w * rect[0])
-        y0 = int(h * rect[1])
-        x1 = int(w * rect[2])
-        y1 = int(h * rect[3])
-
-        # Crop image
-        cropped = image[y0:y1, x0:x1]
-        return cropped
-
-    def crop_image(self, image, rect):
-        """ Crop an image using a pixel values.
-        Rect is an array of pixel values [100, 200, 1800, 1600] = [X0, Y0, X1, Y1]
-        Returns the cropped image."""
-        cropped = image[rect[1]:rect[3], rect[0]:rect[2]]  # i.e. [y:y+h, x:x+w]
-        return cropped
 
     def set_screen_image(self, image):
         """ Use an image instead of a screen capture. Sets the image and also sets the
@@ -289,4 +320,5 @@ class Screen:
         # Set the screen size to the original image size, not the region size
         self.screen_width = w
         self.screen_height = h
-
+        self.screen_left = 0
+        self.screen_top = 0
