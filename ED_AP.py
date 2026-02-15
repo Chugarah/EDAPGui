@@ -626,6 +626,34 @@ class EDAutopilot:
 
         self.ap_ckb('log+vce', 'Occluded Target Calibration complete.')
 
+    def calibrate_target_occluded(self):
+        """ Routine to find the optimal scaling values for the template images using the occluded target. """
+        msg = 'Select OK to begin Calibration. You must be in space and have the occluded target (dashed circle) visible.'
+        self.vce.say(msg)
+        ans = messagebox.askokcancel('Calibration', msg)
+        if not ans:
+            return
+
+        self.ap_ckb('log+vce', 'Occluded Target Calibration starting.')
+
+        set_focus_elite_window()
+
+        # Draw the target and compass regions on the screen
+        key = 'target_occluded'
+        targ_region = self.scrReg.reg[key]
+        self.overlay.overlay_rect1(key, targ_region['rect'], (0, 0, 255), 2)
+        self.overlay.overlay_floating_text(key, key, targ_region['rect'][0], targ_region['rect'][1], (0, 0, 255))
+        self.overlay.overlay_paint()
+
+        # Calibrate system target
+        self.calibrate_target_occluded_worker()
+
+        # Clean up
+        self.overlay.overlay_clear()
+        self.overlay.overlay_paint()
+
+        self.ap_ckb('log+vce', 'Occluded Target Calibration complete.')
+
     def calibrate_compass(self):
         """ Routine to find the optimal scaling values for the template images. """
         msg = 'Select OK to begin Calibration. You must be in space and have the compass visible.'
@@ -684,8 +712,10 @@ class EDAutopilot:
             self.ap_ckb('log', f'Target Cal: Best match: {max_val * 100:5.2f}% at scale: {self.scr.scaleX:5.4f}')
             self.config['TargetScale'] = round(self.scr.scaleX, 4)
             # self.scr.scales['Calibrated'] = [self.scr.scaleX, self.scr.scaleY]
-            self.scr.write_config(
-                data=None)  # None means the writer will use its own scales variable which we modified
+            # Save the new TargetScale to AP.json
+            self.write_config(self.config)
+            
+            # self.scr.write_config(data=None)  # Incorrect legacy call removed
         else:
             self.ap_ckb('log',
                         f'Target Cal: Insufficient matching to meet reliability, max % match: {max_val * 100:5.2f}%')
@@ -802,6 +832,9 @@ class EDAutopilot:
                         f'Compass Cal: Max best match: {max_val * 100:5.2f}% with scale: {c_scaleX:5.4f}')
             # Keep new value
             self.compass_scale = c_scaleX
+            
+            # Save the new compass_scale to ship_configs.json (per ship)
+            self.update_ship_configs()
 
         else:
             self.ap_ckb('log',

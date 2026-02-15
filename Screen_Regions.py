@@ -111,7 +111,7 @@ class Screen_Regions:
         # The rect is [L, T, R, B] top left x, y, and bottom right x, y in fraction of screen resolution
         self.reg['compass']   = {'rect': [0.33, 0.65, 0.46, 1.0], 'width': 1, 'height': 1, 'filterCB': self.equalize,                                'filter': None}
         self.reg['target']    = {'rect': [0.33, 0.27, 0.66, 0.70], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.orange_2_color_range}   # also called destination
-        self.reg['target_occluded']    = {'rect': [0.40, 0.35, 0.60, 0.55], 'width': 1, 'height': 1, 'filterCB': self.equalize, 'filter': None} 
+        self.reg['target_occluded']    = {'rect': [0.35, 0.25, 0.65, 0.70], 'width': 1, 'height': 1, 'filterCB': self.equalize, 'filter': None}  
         self.reg['sun']       = {'rect': [0.30, 0.30, 0.70, 0.68], 'width': 1, 'height': 1, 'filterCB': self.filter_sun, 'filter': None}
         self.reg['disengage'] = {'rect': [0.42, 0.65, 0.60, 0.80], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.blue_sco_color_range}
         self.reg['sco']       = {'rect': [0.42, 0.65, 0.60, 0.80], 'width': 1, 'height': 1, 'filterCB': self.filter_by_color, 'filter': self.blue_sco_color_range}
@@ -127,6 +127,8 @@ class Screen_Regions:
                                      int(xx[2]*screen.screen_width), int(xx[3]*screen.screen_height)]
             self.reg[key]['width']  = self.reg[key]['rect'][2] - self.reg[key]['rect'][0]
             self.reg[key]['height'] = self.reg[key]['rect'][3] - self.reg[key]['rect'][1]
+
+
 
     def capture_region(self, screen, region_name):
         """ Just grab the screen based on the region name/rect.
@@ -172,6 +174,15 @@ class Screen_Regions:
         Returns the image, detail of match and the match mask. """
         img_region = self.screen.get_screen_region(self.reg[region_name]['rect'], rgb=False)
         templ = self.templates.template[templ_name]['image']
+
+        # Safety guard: check if region is large enough for template matching
+        img_h, img_w = img_region.shape[:2]
+        templ_h, templ_w = templ.shape[:2]
+        if img_h < templ_h or img_w < templ_w:
+            print(f"ERROR match_template_in_region_x3: Region '{region_name}' ({img_w}x{img_h}) is smaller than template '{templ_name}' ({templ_w}x{templ_h}).")
+            print(f"  Screen: {self.screen.screen_width}x{self.screen.screen_height}, RegDef: {self.reg[region_name]['rect']}")
+            match = np.zeros((1, 1), dtype=np.float32)
+            return img_region, (0.0, 0.0, (0, 0), (0, 0)), match
 
         # Convert to HSV and split.
         img_hsv = cv2.cvtColor(img_region, cv2.COLOR_BGR2HSV)

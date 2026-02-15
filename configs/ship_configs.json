@@ -1,7 +1,7 @@
 {
     "Ship_Configs": {
         "panthermkii": {
-            "compass_scale": 1.0,
+            "compass_scale": 0.771,
             "PitchRate": 16.0,
             "RollRate": 25.0,
             "YawRate": 10.0,
