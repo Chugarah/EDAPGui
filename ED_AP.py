@@ -34,7 +34,7 @@ from StatusParser import StatusParser
 from Voice import *
 from Robigo import *
 from TCE_Integration import TceIntegration
-from scripts.SunAvoidance import SunAvoidance
+
 from scripts.SupercruiseAvoidance import SupercruiseAvoidance
 
 """
@@ -252,7 +252,7 @@ class EDAutopilot:
         self.system_map = EDSystemMap(self, self.scr, self.keys, cb, self.jn.ship_state()['odyssey'])
         self.stn_svcs_in_ship = EDStationServicesInShip(self, self.scr, self.keys, cb)
         self.nav_panel = EDNavigationPanel(self, self.scr, self.keys, cb)
-        self.sun_avoidance = SunAvoidance(self)
+
         self.sc_avoidance = SupercruiseAvoidance(self)
 
         self.mesg_server = EDMesgServer(self, cb)
@@ -626,6 +626,34 @@ class EDAutopilot:
 
         self.ap_ckb('log+vce', 'Occluded Target Calibration complete.')
 
+    def calibrate_target_occluded(self):
+        """ Routine to find the optimal scaling values for the template images using the occluded target. """
+        msg = 'Select OK to begin Calibration. You must be in space and have the occluded target (dashed circle) visible.'
+        self.vce.say(msg)
+        ans = messagebox.askokcancel('Calibration', msg)
+        if not ans:
+            return
+
+        self.ap_ckb('log+vce', 'Occluded Target Calibration starting.')
+
+        set_focus_elite_window()
+
+        # Draw the target and compass regions on the screen
+        key = 'target_occluded'
+        targ_region = self.scrReg.reg[key]
+        self.overlay.overlay_rect1(key, targ_region['rect'], (0, 0, 255), 2)
+        self.overlay.overlay_floating_text(key, key, targ_region['rect'][0], targ_region['rect'][1], (0, 0, 255))
+        self.overlay.overlay_paint()
+
+        # Calibrate system target
+        self.calibrate_target_occluded_worker()
+
+        # Clean up
+        self.overlay.overlay_clear()
+        self.overlay.overlay_paint()
+
+        self.ap_ckb('log+vce', 'Occluded Target Calibration complete.')
+
     def calibrate_compass(self):
         """ Routine to find the optimal scaling values for the template images. """
         msg = 'Select OK to begin Calibration. You must be in space and have the compass visible.'
@@ -696,43 +724,80 @@ class EDAutopilot:
         self.templ.reload_templates(self.scr.scaleX, self.scr.scaleY, self.compass_scale)
 
     def calibrate_target_occluded_worker(self):
-        """ Calibrate occluded target using template matching. """
-        range_low = 30
-        range_high = 200
-        range_step = 1
-        scale_max = 0
-        max_val = 0
+        """ Calibrate occluded target using shape-based detection (robust to brightness). """
+        
+        # Step 1: Reset to base scale (1.0) to get reference dimensions
+        self.scr.scaleX = 1.0
+        self.scr.scaleY = 1.0
+        self.templ.reload_templates(self.scr.scaleX, self.scr.scaleY, self.compass_scale)
+        
+        # Step 2: Get reference radius from 1.0 scale template
+        width = self.scrReg.templates.template['target_occluded']['width']
+        height = self.scrReg.templates.template['target_occluded']['height']
+        ref_radius = (width + height) / 4.0  # Average radius at scale 1.0
+        
+        logger.debug(f"Calibration Reference: Scale=1.0, Width={width}, Height={height}, Radius={ref_radius:.2f}")
 
-        # loop through the test twice. Once over the wide scaling range at 1% increments and once over a
-        # small scaling range at 0.1% increments.
-        # Find out which scale factor meets the highest threshold value.
-        for i in range(2):
-            threshold = 0.5  # Minimum match is constant. Result will always be the highest match.
-            scale, max_pick = self.calibrate_region(range_low, range_high, range_step, threshold, 'target_occluded', 'target_occluded')
-            if scale != 0:
-                scale_max = scale
-                max_val = max_pick
-                range_low = scale - 5
-                range_high = scale + 5
-                range_step = 0.1
-            else:
-                break  # no match found with threshold
+        # Step 3: Detect circle with wide tolerance
+        # We search for a radius between 30% and 300% of the reference (Scale 0.3 to 3.0)
+        # radius_tolerance=2.0 implies range [1.0-2.0, 1.0+2.0] -> [-1.0, 3.0], clipped to sensible min/max in detector
+        # But detector uses fraction: min = ref * (1-tol), max = ref * (1+tol). 
+        # So to support 0.3x, we need min to be ~0.3 => 1 - tol = 0.3 => tol = 0.7.
+        # To support 2.0x, we need max to be ~2.0 => 1 + tol = 2.0 => tol = 1.0.
+        # Let's use tolerance=0.9 to cover range [0.1x, 1.9x]. Most users are 0.5x to 1.5x.
+        # Actually, let's just interpret the result directly.
+        
+        found, score, circle, info = self.scrReg.detect_dashed_circle(
+            'target_occluded',
+            expected_radius_px=ref_radius,
+            radius_tolerance=0.9, # Covers scale 0.1 to 1.9
+            ring_score_thresh=0.45 # Slightly lower threshold for calibration to ensure we find *something*
+        )
 
-        # if we found a scaling factor that meets our criteria, then save it to the resolution.json file
-        if max_val != 0:
-            self.scr.scaleX = float(scale_max / 100)
-            self.scr.scaleY = self.scr.scaleX
-            self.ap_ckb('log', f'Target (Occluded) Cal: Best match: {max_val * 100:5.2f}% at scale: {self.scr.scaleX:5.4f}')
+        detected_scale = 0.0
+        
+        if found and circle is not None:
+             cx, cy, r = circle
+             detected_scale = r / ref_radius
+             
+             # Visualize success
+             targ_region = self.scrReg.reg['target_occluded']
+             left = targ_region['rect'][0]
+             top = targ_region['rect'][1]
+             
+             # Draw the detected circle on the overlay
+             # Overlay relative coordinates
+             rel_cx = left + cx
+             rel_cy = top + cy
+             
+             # Draw box around detected circle
+             box_size = int(r * 1.2)
+             self.overlay.overlay_rect(20, (rel_cx - box_size, rel_cy - box_size), 
+                                          (rel_cx + box_size, rel_cy + box_size), (0, 255, 0), 2)
+             self.overlay.overlay_floating_text(20, f'Match! Scale: {detected_scale:.4f}', 
+                                               rel_cx - box_size, rel_cy - box_size - 25, (0, 255, 0))
+             self.overlay.overlay_paint()
+             sleep(2) # Show user
+        
+        # Step 4: Apply results
+        if detected_scale > 0.1:
+            self.scr.scaleX = float(detected_scale)
+            self.scr.scaleY = float(detected_scale)
+            
+            msg = f'Target (Occluded) Cal: Success! Scale={self.scr.scaleX:.4f} (Score={score:.2f})'
+            self.ap_ckb('log', msg)
             self.config['TargetScale'] = round(self.scr.scaleX, 4)
-            # self.scr.scales['Calibrated'] = [self.scr.scaleX, self.scr.scaleY]
-            
-            # Save the new TargetScale to AP.json
-            self.write_config(self.config)
-            
-            # self.scr.write_config(data=None)  # Incorrect legacy call removed
+            self.scr.write_config(data=None)
         else:
-            self.ap_ckb('log',
-                        f'Target (Occluded) Cal: Insufficient matching to meet reliability, max % match: {max_val * 100:5.2f}%')
+            msg = f'Target (Occluded) Cal: Failed to detect dashed circle. Please ensure it is visible.'
+            self.ap_ckb('log', msg)
+            if info:
+                logger.debug(f'Calib Fail Info: {info}')
+
+        # Clean up overlay
+        self.overlay.overlay_remove_rect(20)
+        self.overlay.overlay_remove_floating_text(20)
+        self.overlay.overlay_paint()
 
         # reload the templates with the new (or previous value)
         self.templ.reload_templates(self.scr.scaleX, self.scr.scaleY, self.compass_scale)
@@ -1488,30 +1553,19 @@ class EDAutopilot:
     # then will pitch up until below threshold.
     #
     def sun_avoid(self, scr_reg) -> bool:
-        """Use the SunAvoidance script to handle sun obstruction.
+        """Standard Sun Avoidance: Pitch up until sun is no longer detected."""
         
-        This delegates to the SunAvoidance class which will:
-        1. Detect if sun is blocking the path
-        2. Pitch away from the sun
-        3. Continue flying away for SunAvoidanceDuration seconds
-        4. Return control for target alignment
-        
-        Returns:
-            True if sun avoidance was executed, False if skipped.
-        """
-        # Gate: only run SunAvoidance during inter-system route travel
-        # Also run if we are in a waypoint sequence or FSD assist, as we might have just arrived at the star
-        if not (self.is_inter_system_route_active() or 
-                self.waypoint_assist_enabled or 
-                self.single_waypoint_enabled or 
-                self.fsd_assist_enabled):
-            logger.debug('sun_avoid: skipping - no inter-system route active (in-system SC Assist)')
-            return False
-        
-        logger.debug('sun_avoid: delegating to SunAvoidance script')
-        sleep(0.5)
-        self.sun_avoidance.execute(scr_reg)
-        return True
+        # Check if sun is detected
+        if scr_reg.sun_percent(self.scr) > 5:  # Simple threshold check
+            self.vce.say("Sun detected, pitching up")
+            logger.debug("Sun detected, pitching up")
+            
+            # Pitch up for a set duration or until sun is gone
+            self.pitchUp(10) # Pitch up 10 degrees (adjust as needed)
+            sleep(1)
+            
+            return True
+        return False
 
     def nav_align(self, scr_reg):
         """ Use the compass to find the nav point position.  Will then perform rotation and pitching

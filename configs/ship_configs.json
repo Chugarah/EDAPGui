@@ -5,6 +5,13 @@
             "PitchRate": 16.0,
             "RollRate": 25.0,
             "YawRate": 10.0,
+            "SunPitchUp+Time": 2.0
+        },
+        "mandalay": {
+            "compass_scale": 0.977,
+            "PitchRate": 40.0,
+            "RollRate": 120.0,
+            "YawRate": 24.0,
             "SunPitchUp+Time": 1.0
         }
     }
