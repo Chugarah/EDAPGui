@@ -1,0 +1,29 @@
+		<Secondary Device="Keyboard" Key="Key_Numpad_3"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_4" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_6" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_7" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_9" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_2" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_8" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_0" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_5" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_3" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_Enter" />
+		<Secondary Device="Keyboard" Key="Key_Numpad_Divide"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_Multiply"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_Decimal"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_0"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_Add"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_1"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_Subtract"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_8"><Modifier Device="Keyboard" Key="Key_LeftAlt" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_2"><Modifier Device="Keyboard" Key="Key_LeftAlt" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_4"><Modifier Device="Keyboard" Key="Key_LeftAlt" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_6"><Modifier Device="Keyboard" Key="Key_LeftAlt" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_Enter"><Modifier Device="Keyboard" Key="Key_LeftAlt" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_Decimal"><Modifier Device="Keyboard" Key="Key_LeftAlt" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_9"><Modifier Device="Keyboard" Key="Key_LeftAlt" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_7"><Modifier Device="Keyboard" Key="Key_LeftAlt" /></Secondary>
+		<Secondary Device="Keyboard" Key="Key_Numpad_5"><Modifier Device="Keyboard" Key="Key_LeftControl" /></Secondary>
+		<Primary Device="Keyboard" Key="Key_Numpad_1" />
+		<Primary Device="Keyboard" Key="Key_Numpad_1" />

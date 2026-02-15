@@ -1797,11 +1797,6 @@ class EDAutopilot:
                 # Continue journey after interdiction
                 self.set_speed_0()
 
-            # if we are pitching more than N seconds break, may be in high density area star area (close to core)
-            if ((time.time()-starttime) > fail_safe_timeout):
-                logger.debug('sun avoid failsafe timeout')
-                print("sun avoid failsafe timeout")
-                break
 
         sleep(0.35)                 # up slightly so not to overheat when scooping
         # Some ships heat up too much and need pitch up a little further

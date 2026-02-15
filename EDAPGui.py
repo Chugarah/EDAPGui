@@ -9,6 +9,15 @@
 # import json
 # from pathlib import Path
 import subprocess
+import warnings
+import os
+
+# Suppress GLOG (C++ logging) from Paddle
+os.environ['GLOG_minloglevel'] = '2'
+
+# Filter out the UserWarning about ccache from paddle
+warnings.filterwarnings("ignore", category=UserWarning, message="No ccache found", module='paddle')
+
 
 import keyboard
 import webbrowser

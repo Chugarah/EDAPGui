@@ -10,6 +10,10 @@ from strsimpy import SorensenDice
 from strsimpy.jaro_winkler import JaroWinkler
 from strsimpy.normalized_levenshtein import NormalizedLevenshtein
 from EDlogger import logger
+import logging
+logging.getLogger("ppocr").setLevel(logging.ERROR)
+logging.getLogger("paddlex").setLevel(logging.ERROR)
+
 from tkinter import messagebox
 import tkinter as tk
 
