@@ -340,6 +340,9 @@ class APGui():
     def calibrate_compass_callback(self):
         self.ed_ap.calibrate_compass()
 
+    def calibrate_occlusion_callback(self):
+        self.ed_ap.calibrate_target_occluded()
+
     def quit(self):
         logger.debug("Entered: quit")
         self.close_window()
@@ -788,6 +791,7 @@ class APGui():
         menubar = Menu(win, background='#ff8000', foreground='black', activebackground='white', activeforeground='black')
         file = Menu(menubar, tearoff=0)
         file.add_command(label="Calibrate Target", command=self.calibrate_callback)
+        file.add_command(label="Calibrate Target Occluded", command=self.calibrate_occlusion_callback)
         file.add_command(label="Calibrate Compass", command=self.calibrate_compass_callback)
         self.checkboxvar['Enable CV View'] = IntVar()
         self.checkboxvar['Enable CV View'].set(int(self.ed_ap.config['Enable_CV_View']))  # set IntVar value to the one from config
