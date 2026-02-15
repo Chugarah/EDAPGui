@@ -1,3 +1,5 @@
+import sys
+
 import colorlog
 import datetime
 import logging
@@ -12,7 +14,11 @@ if os.path.exists(_filename):
     t = os.path.getmtime(_filename)
     v = datetime.datetime.fromtimestamp(t)
     x = v.strftime('%Y-%m-%d %H-%M-%S')
-    os.rename(_filename, f"{filename_only} {x}.log")
+    try:
+        os.rename(_filename, f"{filename_only} {x}.log")
+    except PermissionError:
+        # If the file is locked, we can't rotate it. Just append to the existing log.
+        pass
 
 # Define the logging config.
 logging.basicConfig(filename=_filename, level=logging.ERROR,
@@ -23,6 +29,7 @@ logger = colorlog.getLogger('ed_log')
 
 # Change this to debug if want to see debug lines in log file
 logger.setLevel(logging.INFO)    # change to INFO for more... DEBUG for much more
+logger.info(f'Python version: {sys.version}')
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.WARNING)  # change this to what is shown on console
