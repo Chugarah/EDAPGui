@@ -1,20 +1,20 @@
 {
     "Ship_Configs": {
         "panthermkii": {
-            "compass_scale": 1.0175,
+            "compass_scale": 1.0225,
             "PitchRate": 16.0,
             "RollRate": 25.0,
             "YawRate": 10.0,
-            "SunPitchUp+Time": 2.0,
+            "SunPitchUp+Time": 0.5,
             "PitchFactor": 12.0,
             "RollFactor": 20.0,
             "YawFactor": 12.0,
             "Speed50": {
                 "RollRate": {
-                    "50": 24.39,
-                    "84": 21.19,
-                    "167": 24.01,
-                    "327": 22.48,
+                    "52": 21.12,
+                    "87": 17.81,
+                    "175": 23.1,
+                    "337": 25.0,
                     "450": 25.0
                 },
                 "PitchRate": {
@@ -45,7 +45,7 @@
             }
         },
         "mandalay": {
-            "compass_scale": 0.88,
+            "compass_scale": 0.8925,
             "PitchRate": 40.0,
             "RollRate": 120.0,
             "YawRate": 24.0,
@@ -81,9 +81,34 @@
             "RollFactor": 20.0,
             "YawFactor": 12.0,
             "SCSpeed50": {
-                "RollRate": {},
-                "PitchRate": {},
-                "YawRate": {}
+                "RollRate": {
+                    "66": 77.89,
+                    "96": 86.35,
+                    "187": 120.0,
+                    "323": 120.0,
+                    "450": 120.0
+                },
+                "PitchRate": {
+                    "6": 7.51,
+                    "10": 9.4,
+                    "21": 13.74,
+                    "43": 21.74,
+                    "87": 27.67,
+                    "168": 35.82,
+                    "300": 40.0
+                },
+                "YawRate": {
+                    "6": 5.01,
+                    "10": 6.11,
+                    "21": 10.3,
+                    "41": 12.88,
+                    "80": 17.02,
+                    "160": 23.1,
+                    "300": 24.0
+                }
+            },
+            "SCSpeed0": {
+                "PitchRate": {}
             }
         }
     }

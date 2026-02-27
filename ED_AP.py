@@ -1667,36 +1667,11 @@ class EDAutopilot:
             logger.error('In dock(), after long wait, but still not in_space')
             raise Exception('Docking failed (not in space)')
 
-        # Intelligent approach using OCR distance
-        start_time = time.time()
-        while True:
-            # Check for timeout (120 seconds should be plenty for < 20km)
-            if time.time() - start_time > 120:
-                 logger.warning("Docking approach timed out taking too long")
-                 break 
-
-            dist = self.nav_panel.get_distance_to_station()
-            # Always close panel after check to ensure safe flight and key handling
-            self.nav_panel.hide_nav_panel()
-
-            if dist is not None:
-                 self.ap_ckb('log', f"Distance to station: {dist:.1f}km")
-                 if dist <= 7.3:
-                     break
-                 
-                 # Calculate wait time based on distance
-                 if dist > 25:
-                     sleep(15)
-                 elif dist > 15:
-                     sleep(10)
-                 elif dist > 10:
-                     sleep(5)
-                 else:
-                     sleep(2)
-            else:
-                 logger.warning("Could not read distance to station during approach")
-                 sleep(5)
-
+        # Sleep a bit to get closer (SC assist usually drops us <10km, 
+        # and we need <7.5km to request docking).
+        # We rely on the built-in Distance retry loop below if this isn't close enough.
+        sleep(8)
+        
         # At this point we should be < 7.5km from the station.  Go 0 speed
         # if we get docking granted ED's docking computer will take over
         self.set_speed_0(repeat=2)
